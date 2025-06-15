@@ -1,3 +1,2 @@
 # Castelvania
-Videojuego Basado en Castelvania
-hola
+XXXXXXXXXXXXXXXXXXXXXX

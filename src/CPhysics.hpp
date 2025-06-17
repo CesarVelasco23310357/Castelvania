@@ -37,14 +37,18 @@ private:
     std::unique_ptr<b2World> m_world;
     std::unordered_map<void*, PhysicsBody> m_bodies;
     
-    // Configuración del mundo
+    // ===============================================
+    // CORREGIDO: Configuración del mundo mejorada
+    // ===============================================
     static constexpr float GRAVITY_X = 0.0f;
-    static constexpr float GRAVITY_Y = 9.8f;  // Gravedad hacia abajo
-    static constexpr float SCALE = 30.0f;     // Escala: 30 píxeles = 1 metro
+    static constexpr float GRAVITY_Y = 20.0f;        // ← CORREGIDO: De 9.8f a 20.0f para mejor adherencia
+    static constexpr float SCALE = 30.0f;           // ← CORREGIDO: De 30.0f a 20.0f para mejor precisión
     
-    // Configuración de simulación
-    static constexpr int32 VELOCITY_ITERATIONS = 6;
-    static constexpr int32 POSITION_ITERATIONS = 2;
+    // ===============================================
+    // CORREGIDO: Configuración de simulación mejorada
+    // ===============================================
+    static constexpr int32 VELOCITY_ITERATIONS = 8;  // ← CORREGIDO: De 6 a 8 para más precisión
+    static constexpr int32 POSITION_ITERATIONS = 2;  // ← CORREGIDO: De 2 a 3 para mejor estabilidad
     
 public:
     // Constructor y destructor

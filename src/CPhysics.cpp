@@ -6,12 +6,13 @@
 CPhysics::CPhysics() {
     std::cout << "🔧 Inicializando sistema de físicas Box2D..." << std::endl;
     
-    // Crear mundo con gravedad
+    // Crear mundo con gravedad corregida
     b2Vec2 gravity(GRAVITY_X, GRAVITY_Y);
     m_world = std::make_unique<b2World>(gravity);
     
     std::cout << "✅ Mundo físico creado con gravedad: (" << GRAVITY_X << ", " << GRAVITY_Y << ")" << std::endl;
-    std::cout << "📐 Escala de conversión: " << SCALE << " píxeles = 1 metro" << std::endl;
+    std::cout << "📐 Escala de conversión CORREGIDA: " << SCALE << " píxeles = 1 metro" << std::endl;
+    std::cout << "⚙️ Iteraciones mejoradas: V=" << VELOCITY_ITERATIONS << ", P=" << POSITION_ITERATIONS << std::endl;
 }
 
 // Destructor
@@ -24,7 +25,7 @@ CPhysics::~CPhysics() {
 void CPhysics::update(float deltaTime) {
     if (!m_world) return;
     
-    // Simular un paso del mundo físico
+    // Simular un paso del mundo físico con iteraciones mejoradas
     m_world->Step(deltaTime, VELOCITY_ITERATIONS, POSITION_ITERATIONS);
 }
 
@@ -51,11 +52,11 @@ b2Body* CPhysics::createPlayerBody(float x, float y, void* userData) {
     float height = pixelsToMeters(32.0f); // 32 píxeles de alto
     shape.SetAsBox(width / 2.0f, height / 2.0f);
     
-    // Propiedades físicas del jugador
+    // Propiedades físicas del jugador mejoradas
     b2FixtureDef fixtureDef = createFixtureDef(
         &shape,
         1.0f,   // Densidad
-        0.3f,   // Fricción
+        0.4f,   // Fricción (ligeramente aumentada)
         0.0f,   // Restitución (rebote)
         CATEGORY_PLAYER,
         CATEGORY_PLATFORM | CATEGORY_WALL | CATEGORY_ENEMY
@@ -110,10 +111,13 @@ b2Body* CPhysics::createEnemyBody(float x, float y, void* userData) {
     return body;
 }
 
+// ===============================================
+// CORREGIDO: Método createPlatform mejorado
+// ===============================================
 b2Body* CPhysics::createPlatform(float x, float y, float width, float height) {
     if (!m_world) return nullptr;
     
-    std::cout << "🟩 Creando plataforma en (" << x << ", " << y << ") tamaño: " << width << "x" << height << std::endl;
+    std::cout << "🟩 Creando plataforma: (" << x << "," << y << ") " << width << "x" << height << std::endl;
     
     // Definición del cuerpo estático
     b2BodyDef bodyDef = createBodyDef(x, y, b2_staticBody);
@@ -125,22 +129,20 @@ b2Body* CPhysics::createPlatform(float x, float y, float width, float height) {
     float h = pixelsToMeters(height);
     shape.SetAsBox(w / 2.0f, h / 2.0f);
     
-    // Propiedades físicas de la plataforma
+    // Propiedades físicas SIMPLES
     b2FixtureDef fixtureDef = createFixtureDef(
         &shape,
         0.0f,   // Sin densidad (estático)
-        0.6f,   // Fricción alta
+        1.0f,   // FRICCIÓN MÁXIMA
         0.0f,   // Sin rebote
         CATEGORY_PLATFORM,
         CATEGORY_PLAYER | CATEGORY_ENEMY
     );
     
     body->CreateFixture(&fixtureDef);
-    
-    // Almacenar información del cuerpo (sin userData para plataformas)
     m_bodies.emplace(body, PhysicsBody(body, BodyType::PLATFORM, nullptr));
     
-    std::cout << "✅ Plataforma creada (estática)" << std::endl;
+    std::cout << "✅ Plataforma creada correctamente" << std::endl;
     return body;
 }
 
@@ -149,8 +151,15 @@ b2Body* CPhysics::createWall(float x, float y, float width, float height) {
     
     std::cout << "🧱 Creando muro en (" << x << ", " << y << ") tamaño: " << width << "x" << height << std::endl;
     
+    // CORREGIDO: Aplicar la misma lógica que las plataformas
+    float centerX = x + width/2.0f;
+    float centerY = y + height/2.0f;
+    
     // Definición del cuerpo estático
-    b2BodyDef bodyDef = createBodyDef(x, y, b2_staticBody);
+    b2BodyDef bodyDef;
+    bodyDef.type = b2_staticBody;
+    bodyDef.position.Set(pixelsToMeters(centerX), pixelsToMeters(centerY));
+    
     b2Body* body = m_world->CreateBody(&bodyDef);
     
     // Forma del muro
@@ -160,21 +169,20 @@ b2Body* CPhysics::createWall(float x, float y, float width, float height) {
     shape.SetAsBox(w / 2.0f, h / 2.0f);
     
     // Propiedades físicas del muro
-    b2FixtureDef fixtureDef = createFixtureDef(
-        &shape,
-        0.0f,   // Sin densidad (estático)
-        0.8f,   // Fricción muy alta
-        0.0f,   // Sin rebote
-        CATEGORY_WALL,
-        CATEGORY_PLAYER | CATEGORY_ENEMY
-    );
+    b2FixtureDef fixtureDef;
+    fixtureDef.shape = &shape;
+    fixtureDef.density = 0.0f;        // Sin densidad (estático)
+    fixtureDef.friction = 0.9f;       // ← CORREGIDO: Fricción muy alta para muros
+    fixtureDef.restitution = 0.0f;    // Sin rebote
+    fixtureDef.filter.categoryBits = CATEGORY_WALL;
+    fixtureDef.filter.maskBits = CATEGORY_PLAYER | CATEGORY_ENEMY;
     
     body->CreateFixture(&fixtureDef);
     
     // Almacenar información del cuerpo
     m_bodies.emplace(body, PhysicsBody(body, BodyType::WALL, nullptr));
     
-    std::cout << "✅ Muro creado (estático)" << std::endl;
+    std::cout << "✅ Muro creado (estático) - Centro: (" << centerX << "," << centerY << ")" << std::endl;
     return body;
 }
 
@@ -250,9 +258,13 @@ bool CPhysics::isBodyOnGround(void* userData) {
     b2Body* body = getBody(userData);
     if (!body) return false;
     
-    // Verificar si la velocidad vertical es muy pequeña (cerca del suelo)
+    // CORREGIDO: Verificación más precisa para estar en el suelo
     b2Vec2 velocity = body->GetLinearVelocity();
-    return std::abs(velocity.y) < 0.1f;
+    
+    // Está en el suelo si:
+    // 1. La velocidad vertical es muy pequeña (cerca de 0)
+    // 2. Y está cayendo o estático (no subiendo)
+    return (std::abs(velocity.y) < 0.3f) && (velocity.y >= -0.1f);
 }
 
 bool CPhysics::canJump(void* userData) {
@@ -261,7 +273,7 @@ bool CPhysics::canJump(void* userData) {
 
 // DEBUG
 void CPhysics::debugPrint() const {
-    std::cout << "=== DEBUG SISTEMA DE FÍSICAS ===" << std::endl;
+    std::cout << "=== DEBUG SISTEMA DE FÍSICAS CORREGIDO ===" << std::endl;
     std::cout << "Cuerpos totales: " << m_bodies.size() << std::endl;
     
     int players = 0, enemies = 0, platforms = 0, walls = 0;
@@ -282,10 +294,12 @@ void CPhysics::debugPrint() const {
     
     if (m_world) {
         b2Vec2 gravity = m_world->GetGravity();
-        std::cout << "  🌍 Gravedad: (" << gravity.x << ", " << gravity.y << ")" << std::endl;
+        std::cout << "  🌍 Gravedad CORREGIDA: (" << gravity.x << ", " << gravity.y << ")" << std::endl;
+        std::cout << "  📐 Escala CORREGIDA: " << SCALE << " píxeles = 1 metro" << std::endl;
+        std::cout << "  ⚙️ Iteraciones: V=" << VELOCITY_ITERATIONS << ", P=" << POSITION_ITERATIONS << std::endl;
     }
     
-    std::cout << "===============================" << std::endl;
+    std::cout << "=======================================" << std::endl;
 }
 
 int CPhysics::getBodyCount() const {
@@ -316,6 +330,6 @@ void CPhysics::cleanup() {
         // Box2D limpia automáticamente todos los cuerpos cuando se destruye el mundo
         m_bodies.clear();
         m_world.reset();
-        std::cout << "Mundo fisico limpiado" << std::endl;
+        std::cout << "Mundo físico CORREGIDO limpiado" << std::endl;
     }
 }

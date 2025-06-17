@@ -8,7 +8,7 @@
 #include "CPlayer.hpp"
 #include "CLevel.hpp"
 #include "CEnemy.hpp"
-#include "CPhysics.hpp"  // ← NUEVO: Sistema de físicas
+#include "CPhysics.hpp"  // ← Sistema de físicas Box2D
 
 enum class GameState {
     MENU,
@@ -37,7 +37,7 @@ private:
     int m_currentLevelIndex;
     
     // ===================================
-    // NUEVO: Sistema de físicas
+    // Sistema de físicas Box2D
     // ===================================
     std::unique_ptr<CPhysics> m_physics;
     
@@ -47,7 +47,7 @@ private:
     
     // Game settings
     float m_playerSpeed;
-    float m_jumpForce;        // ← NUEVO: Fuerza de salto
+    float m_jumpForce;        // Fuerza de salto del jugador
     float m_attackRange;
     int m_attackDamage;
     
@@ -83,10 +83,10 @@ public:
     
     // Getters
     GameState getGameState() const;
-    int getCurrentLevel() const;  // Devuelve el número del nivel (1, 2, 3...)
+    int getCurrentLevel() const;          // Devuelve el número del nivel (1, 2, 3...)
     int getTotalScore() const;
     float getTotalPlayTime() const;
-    CPhysics* getPhysics() const;  // ← NUEVO: Acceso al sistema de físicas
+    CPhysics* getPhysics() const;         // Acceso al sistema de físicas
     
     // Game control
     void startNewGame();
@@ -111,7 +111,7 @@ private:
     
     // Game logic
     void updateGameplay(float deltaTime);
-    void updatePhysics(float deltaTime);    // ← NUEVO: Actualizar físicas
+    void updatePhysics(float deltaTime);          // Actualizar sistema de físicas
     void checkCollisions();
     void checkPlayerEnemyCollisions();
     void checkAttackCollisions();
@@ -120,18 +120,18 @@ private:
     // Level management
     void loadLevel(int levelIndex);
     void createLevels();
-    CLevel* getActiveLevel();  // Devuelve puntero al nivel activo
-    const CLevel* getActiveLevel() const;  // ← NUEVO: Versión const
+    CLevel* getActiveLevel();                     // Devuelve puntero al nivel activo
+    const CLevel* getActiveLevel() const;         // Versión const del método anterior
     
     // Player management
     void createPlayer();
     void handlePlayerMovement(float deltaTime);
-    void handlePlayerJump();               // ← NUEVO: Manejar salto
+    void handlePlayerJump();                      // Manejar salto del jugador
     void handlePlayerAttack();
     void updatePlayerBounds();
-    void syncPlayerWithPhysics();          // ← NUEVO: Sincronizar posición física con visual
+    void syncPlayerWithPhysics();                 // Sincronizar posición física con visual
     
-    // Physics management (NUEVO)
+    // Physics management
     void initializePhysics();
     void createPhysicsWorld();
     void createLevelPlatforms();
@@ -150,23 +150,23 @@ private:
     void renderLevelCompleted();
     void renderUI();
     void renderHUD();
-    void renderPhysicsDebug();             // ← NUEVO: Debug visual de físicas
+    void renderPhysicsDebug();                    // Debug visual de físicas
     
     // Utility methods
     void centerText(sf::Text& text, float y);
     void updateHealthBar();
     std::string gameStateToString(GameState state) const;
     sf::Color getHealthBarColor(float healthPercentage) const;
-    
+    void debugFullPhysicsState();
     // Game setup
     void initializeWindow();
     void loadResources();
     void setupGameSettings();
     
-    // Debug
+    // Debug methods
     void printGameState() const;
     void printPlayerPosition() const;
-    void printPhysicsInfo() const;         // ← NUEVO: Info de físicas
+    void printPhysicsInfo() const;                // Información de físicas para debug
 };
 
 #endif // CGAME_HPP

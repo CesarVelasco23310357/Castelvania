@@ -747,15 +747,15 @@ void CLevel::configureDefaultLevel() {
 void CLevel::configurePlatformsLevel1() {
     std::cout << "🟩 Configurando plataformas del Nivel 1..." << std::endl;
     
-    // Plataforma principal (suelo)
-    addPhysicalPlatform(0.0f, 550.0f, 800.0f, 50.0f, sf::Color::Green);
+    // ✅ PISO NEGRO - AQUÍ ESTÁ EL ERROR QUE DEBES CORREGIR
+    addPhysicalPlatform(0.0f, 570.0f, 800.0f, 30.0f, sf::Color::Black);  // ← NEGRO, no verde
     
-    // Plataformas de salto
-    addPhysicalPlatform(200.0f, 450.0f, 150.0f, 20.0f, sf::Color::Yellow);
-    addPhysicalPlatform(450.0f, 350.0f, 150.0f, 20.0f, sf::Color::Yellow);
-    addPhysicalPlatform(600.0f, 250.0f, 100.0f, 20.0f, sf::Color::Red);
+    // Plataformas de colores
+    addPhysicalPlatform(150.0f, 480.0f, 120.0f, 15.0f, sf::Color::Green);
+    addPhysicalPlatform(350.0f, 400.0f, 120.0f, 15.0f, sf::Color::Yellow);
+    addPhysicalPlatform(550.0f, 320.0f, 120.0f, 15.0f, sf::Color::Red);
     
-    std::cout << "✓ Nivel 1: Plataformas básicas creadas" << std::endl;
+    std::cout << "✓ Piso NEGRO configurado en Y=570" << std::endl;
 }
 
 // ===================================
@@ -765,7 +765,7 @@ void CLevel::configurePlatformsLevel2() {
     std::cout << "🟩 Configurando plataformas del Nivel 2..." << std::endl;
     
     // Plataforma principal (suelo)
-    addPhysicalPlatform(0.0f, 550.0f, 800.0f, 50.0f, sf::Color::Green);
+    addPhysicalPlatform(0.0f, 550.0f, 800.0f, 50.0f, sf::Color::Black);
     
     // Plataformas flotantes más complejas
     addPhysicalPlatform(100.0f, 450.0f, 120.0f, 20.0f, sf::Color::Yellow);
@@ -786,7 +786,7 @@ void CLevel::configurePlatformsLevel3() {
     std::cout << "🟩 Configurando plataformas del Nivel 3..." << std::endl;
     
     // Plataforma principal (suelo)
-    addPhysicalPlatform(0.0f, 550.0f, 800.0f, 50.0f, sf::Color::Green);
+    addPhysicalPlatform(0.0f, 550.0f, 800.0f, 50.0f, sf::Color::Black);
     
     // Laberinto vertical
     addPhysicalPlatform(50.0f, 480.0f, 100.0f, 15.0f, sf::Color::Yellow);

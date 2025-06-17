@@ -167,7 +167,7 @@ void CGame::restartLevel() {
             m_player->setPosition(100.0f, 100.0f);
             m_player->setHealth(m_player->getMaxHealth());
             // *** NUEVO: Sincronizar con físicas ***
-            if (m_physics) {
+            if (m_physics && m_player->getPhysicsBody()) {
                 m_player->updatePhysicsPosition();
             }
         }
@@ -274,21 +274,26 @@ void CGame::update(float deltaTime) {
 }
 
 // ===============================================
-// NUEVO: Actualización del mundo físico
+// CORREGIDO: Actualización del mundo físico con mejores verificaciones
 // ===============================================
 void CGame::updatePhysics(float deltaTime) {
-    if (m_physics) {
-        m_physics->update(deltaTime);
-        
-        // Sincronizar posiciones físicas con visuales
-        if (m_player) {
-            m_player->syncPositionFromPhysics();
-        }
-        
-        // Sincronizar enemigos
-        if (getActiveLevel()) {
-            // Los enemigos se sincronizan automáticamente en su update()
-        }
+    if (!m_physics) {
+        std::cerr << "⚠️ Warning: Sistema de físicas no inicializado" << std::endl;
+        return;
+    }
+    
+    m_physics->update(deltaTime);
+    
+    // Sincronizar posiciones físicas con visuales
+    if (m_player && m_player->getPhysicsBody()) {
+        m_player->syncPositionFromPhysics();
+    }
+    
+    // Sincronizar enemigos
+    CLevel* activeLevel = getActiveLevel();
+    if (activeLevel) {
+        // Los enemigos se sincronizan automáticamente en su update()
+        // Pero podríamos agregar verificaciones adicionales aquí si es necesario
     }
 }
 
@@ -333,19 +338,21 @@ void CGame::processGameInput(float deltaTime) {
     
     handlePlayerMovement(deltaTime);
     
-    // *** NUEVO: Salto con W o barra espaciadora ***
     if (isKeyJustPressed(sf::Keyboard::W) || isKeyJustPressed(sf::Keyboard::Space)) {
         handlePlayerJump();
     }
     
-    // Ataque con ENTER (cambiado para evitar conflicto con Space)
     if (isKeyJustPressed(sf::Keyboard::Enter)) {
         handlePlayerAttack();
     }
     
-    // Restart nivel (para debug)
     if (isKeyJustPressed(sf::Keyboard::R)) {
         restartLevel();
+    }
+    
+    // ✅ DEBUG con tecla P
+    if (isKeyJustPressed(sf::Keyboard::P)) {
+        debugFullPhysicsState();
     }
 }
 
@@ -386,8 +393,14 @@ void CGame::checkCollisions() {
     checkAttackCollisions();
 }
 
+// ===============================================
+// CORREGIDO: Mejorar checkPlayerEnemyCollisions para evitar spam de daño
+// ===============================================
 void CGame::checkPlayerEnemyCollisions() {
     if (!m_player || !getActiveLevel()) return;
+    
+    // Verificar que el jugador está vivo
+    if (!m_player->isAlive()) return;
     
     CLevel* level = getActiveLevel();
     sf::FloatRect playerBounds = m_player->getBounds();
@@ -396,12 +409,19 @@ void CGame::checkPlayerEnemyCollisions() {
     CEnemy* closestEnemy = level->getClosestEnemyToPosition(
         m_player->getPosition(), 40.0f);
     
-    if (closestEnemy && closestEnemy->getBounds().intersects(playerBounds)) {
-        // El jugador toca un enemigo - recibe daño
-        int damage = closestEnemy->attack();
-        if (damage > 0) {
-            m_player->takeDamage(damage);
-            std::cout << "¡El jugador recibe " << damage << " de daño!" << std::endl;
+    if (closestEnemy && closestEnemy->isAlive() && 
+        closestEnemy->getBounds().intersects(playerBounds)) {
+        
+        // Verificar que no estemos ya en estado hurt para evitar spam de daño
+        if (!m_player->isHurt()) {
+            int damage = closestEnemy->attack();
+            if (damage > 0) {
+                m_player->takeDamage(damage);
+                std::cout << "¡El jugador recibe " << damage << " de daño!" << std::endl;
+                
+                // Añadir un pequeño cooldown para evitar daño continuo
+                m_inputCooldown = 0.5f; // 0.5 segundos de cooldown
+            }
         }
     }
 }
@@ -430,36 +450,61 @@ void CGame::updateGameState() {
 }
 
 // LEVEL MANAGEMENT
+// ===============================================
+// CORREGIDO: Mejorar loadLevel con mejor manejo de errores
+// ===============================================
 void CGame::loadLevel(int levelIndex) {
     if (levelIndex < 0 || levelIndex >= static_cast<int>(m_levels.size())) {
-        std::cerr << "Error: Índice de nivel inválido: " << levelIndex << std::endl;
+        std::cerr << "❌ Error: Índice de nivel inválido: " << levelIndex << std::endl;
+        std::cerr << "   Niveles disponibles: 0-" << (m_levels.size() - 1) << std::endl;
         return;
     }
     
     std::cout << "Cargando nivel " << (levelIndex + 1) << "..." << std::endl;
     
     // Descargar nivel anterior si existe
-    if (m_currentLevelIndex < static_cast<int>(m_levels.size())) {
-        m_levels[m_currentLevelIndex]->unloadLevel();
+    if (m_currentLevelIndex >= 0 && m_currentLevelIndex < static_cast<int>(m_levels.size())) {
+        if (m_levels[m_currentLevelIndex]) {
+            m_levels[m_currentLevelIndex]->unloadLevel();
+        }
     }
     
     m_currentLevelIndex = levelIndex;
     
-    // *** NUEVO: Configurar físicas del nivel ***
-    if (m_physics) {
-        m_levels[levelIndex]->initializePhysics(m_physics.get());
+    // Verificar que el nivel existe
+    if (!m_levels[levelIndex]) {
+        std::cerr << "❌ Error: Nivel " << levelIndex << " es nulo" << std::endl;
+        m_gameState = GameState::GAME_OVER;
+        return;
     }
     
-    m_levels[levelIndex]->loadLevel();
-    m_levels[levelIndex]->startLevel();
+    // Configurar físicas del nivel
+    if (m_physics) {
+        m_levels[levelIndex]->initializePhysics(m_physics.get());
+    } else {
+        std::cerr << "⚠️ Warning: Cargando nivel sin sistema de físicas" << std::endl;
+    }
+    
+    try {
+        m_levels[levelIndex]->loadLevel();
+        m_levels[levelIndex]->startLevel();
+    } catch (const std::exception& e) {
+        std::cerr << "❌ Error al cargar nivel: " << e.what() << std::endl;
+        m_gameState = GameState::GAME_OVER;
+        return;
+    }
     
     // Resetear posición del jugador
     if (m_player) {
         m_player->setPosition(100.0f, 100.0f);
-        if (m_physics) {
-            m_player->updatePhysicsPosition(); // *** NUEVO: Sincronizar con físicas ***
+        if (m_physics && m_player->getPhysicsBody()) {
+            m_player->updatePhysicsPosition();
         }
+    } else {
+        std::cerr << "⚠️ Warning: Jugador no existe al cargar nivel" << std::endl;
     }
+    
+    std::cout << "✅ Nivel " << (levelIndex + 1) << " cargado exitosamente" << std::endl;
 }
 
 void CGame::createLevels() {
@@ -480,22 +525,37 @@ CLevel* CGame::getActiveLevel() {
     return nullptr;
 }
 
-// PLAYER MANAGEMENT
-void CGame::createPlayer() {
-    std::string playerName;
-    std::cout << "Ingresa tu nombre: ";
-    std::getline(std::cin, playerName);
-    
-    if (playerName.empty()) {
-        playerName = "Héroe";
+// ===============================================
+// CORREGIDO: Agregar implementación del método const faltante
+// ===============================================
+const CLevel* CGame::getActiveLevel() const {
+    if (m_currentLevelIndex >= 0 && m_currentLevelIndex < static_cast<int>(m_levels.size())) {
+        return m_levels[m_currentLevelIndex].get();
     }
+    return nullptr;
+}
+
+// PLAYER MANAGEMENT
+// ===============================================
+// CORREGIDO: Mejorar createPlayer para evitar bloqueo de UI
+// ===============================================
+void CGame::createPlayer() {
+    // PROBLEMA ORIGINAL: std::cin bloquea la interfaz gráfica
+    // SOLUCIÓN: Usar nombre por defecto o sistema de input del juego
+    
+    std::string playerName = "Héroe"; // Nombre por defecto
+    
+    // Opción alternativa: podrías implementar un sistema de input en el menú
+    // Por ahora usamos nombre por defecto para evitar el bloqueo
+    
+    std::cout << "Creando jugador con nombre: " << playerName << std::endl;
     
     m_player = std::make_unique<CPlayer>(playerName);
     m_player->setPosition(100.0f, 100.0f);
     m_player->setSpeed(m_playerSpeed);
-    m_player->setJumpForce(m_jumpForce);    // *** NUEVO: Configurar fuerza de salto ***
+    m_player->setJumpForce(m_jumpForce);
     
-    // *** NUEVO: Inicializar físicas del jugador ***
+    // Inicializar físicas del jugador
     if (m_physics) {
         m_player->initializePhysics(m_physics.get());
         std::cout << "✅ Jugador agregado al sistema de físicas" << std::endl;
@@ -544,12 +604,29 @@ void CGame::handlePlayerMovement(float deltaTime) {
 }
 
 // ===============================================
-// NUEVO: Manejar salto del jugador
+// CORREGIDO: Mejorar handlePlayerJump con más verificaciones
 // ===============================================
 void CGame::handlePlayerJump() {
-    if (m_player && m_player->isGrounded()) {
+    if (!m_player) {
+        std::cerr << "⚠️ Warning: Intento de salto sin jugador" << std::endl;
+        return;
+    }
+    
+    if (!m_physics) {
+        std::cerr << "⚠️ Warning: Intento de salto sin sistema de físicas" << std::endl;
+        return;
+    }
+    
+    if (!m_player->getPhysicsBody()) {
+        std::cerr << "⚠️ Warning: Jugador sin cuerpo físico" << std::endl;
+        return;
+    }
+    
+    if (m_player->isGrounded() && m_player->isAlive()) {
         m_player->jump();
         std::cout << "🦘 ¡Jugador salta!" << std::endl;
+    } else if (!m_player->isGrounded()) {
+        std::cout << "❌ No se puede saltar: jugador no está en el suelo" << std::endl;
     }
 }
 
@@ -600,7 +677,7 @@ void CGame::updatePlayerBounds() {
     
     if (outOfBounds) {
         m_player->setPosition(playerPos);
-        if (m_physics) {
+        if (m_physics && m_player->getPhysicsBody()) {
             m_player->updatePhysicsPosition();
         }
     }
@@ -873,6 +950,35 @@ void CGame::updateHealthBar() {
     m_healthBar.setFillColor(getHealthBarColor(healthPercentage));
 }
 
+void CGame::debugFullPhysicsState() {
+    std::cout << "\n=== 🔍 DEBUG COMPLETO ===" << std::endl;
+    
+    if (m_physics) {
+        std::cout << "✅ Físicas activas - Cuerpos: " << m_physics->getBodyCount() << std::endl;
+    } else {
+        std::cout << "❌ Físicas INACTIVAS" << std::endl;
+        return;
+    }
+    
+    if (m_player) {
+        sf::Vector2f pos = m_player->getPosition();
+        std::cout << "👤 Jugador en: (" << pos.x << ", " << pos.y << ")" << std::endl;
+        std::cout << "   En suelo: " << (m_player->isGrounded() ? "SÍ" : "NO") << std::endl;
+        
+        if (m_player->getPhysicsBody()) {
+            b2Vec2 vel = m_player->getPhysicsBody()->GetLinearVelocity();
+            std::cout << "   Velocidad: (" << vel.x << ", " << vel.y << ")" << std::endl;
+        } else {
+            std::cout << "   ❌ SIN CUERPO FÍSICO" << std::endl;
+        }
+    }
+    
+    if (getActiveLevel()) {
+        std::cout << "🏗️ Plataformas: " << getActiveLevel()->getPlatformCount() << std::endl;
+    }
+    
+    std::cout << "========================\n" << std::endl;
+}
 std::string CGame::gameStateToString(GameState state) const {
     switch (state) {
         case GameState::MENU: return "Menú";

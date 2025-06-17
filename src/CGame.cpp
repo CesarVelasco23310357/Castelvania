@@ -6,6 +6,7 @@
 CGame::CGame() 
     : m_gameState(GameState::MENU), m_isRunning(false), m_fontLoaded(false),
       m_currentLevelIndex(0), m_inputCooldown(0.0f), m_playerSpeed(150.0f),
+      m_jumpForce(12.0f),         // ← NUEVO: Fuerza de salto
       m_attackRange(50.0f), m_attackDamage(25), m_totalScore(0),
       m_levelsCompleted(0), m_totalPlayTime(0.0f) {
     
@@ -52,12 +53,32 @@ void CGame::initialize() {
     loadResources();
     setupGameSettings();
     setupUI();
+    
+    // *** NUEVO: Inicializar sistema de físicas ***
+    initializePhysics();
+    
     createLevels();
     
     m_isRunning = true;
     m_gameState = GameState::MENU;
     
     std::cout << "Juego inicializado exitosamente." << std::endl;
+}
+
+// ===============================================
+// NUEVO: Inicialización del sistema de físicas
+// ===============================================
+void CGame::initializePhysics() {
+    std::cout << "🔧 Inicializando sistema de físicas..." << std::endl;
+    
+    m_physics = std::make_unique<CPhysics>();
+    
+    if (m_physics) {
+        std::cout << "✅ Sistema de físicas Box2D inicializado" << std::endl;
+        m_physics->debugPrint();
+    } else {
+        std::cerr << "❌ Error: No se pudo inicializar el sistema de físicas" << std::endl;
+    }
 }
 
 void CGame::cleanup() {
@@ -67,6 +88,9 @@ void CGame::cleanup() {
     
     m_player.reset();
     m_levels.clear();
+    
+    // *** NUEVO: Limpiar sistema de físicas ***
+    m_physics.reset();
     
     std::cout << "Recursos del juego liberados." << std::endl;
 }
@@ -90,6 +114,13 @@ int CGame::getTotalScore() const {
 
 float CGame::getTotalPlayTime() const {
     return m_totalPlayTime;
+}
+
+// ===============================================
+// NUEVO: Getter para acceder al sistema de físicas
+// ===============================================
+CPhysics* CGame::getPhysics() const {
+    return m_physics.get();
 }
 
 // GAME CONTROL
@@ -135,6 +166,10 @@ void CGame::restartLevel() {
         if (m_player) {
             m_player->setPosition(100.0f, 100.0f);
             m_player->setHealth(m_player->getMaxHealth());
+            // *** NUEVO: Sincronizar con físicas ***
+            if (m_physics) {
+                m_player->updatePhysicsPosition();
+            }
         }
         m_gameState = GameState::PLAYING;
         std::cout << "Nivel reiniciado." << std::endl;
@@ -228,6 +263,7 @@ void CGame::update(float deltaTime) {
     switch (m_gameState) {
         case GameState::PLAYING:
             updateGameplay(deltaTime);
+            updatePhysics(deltaTime);    // ← NUEVO: Actualizar físicas
             break;
         default:
             // Otros estados no necesitan update constante
@@ -235,6 +271,25 @@ void CGame::update(float deltaTime) {
     }
     
     updateUI();
+}
+
+// ===============================================
+// NUEVO: Actualización del mundo físico
+// ===============================================
+void CGame::updatePhysics(float deltaTime) {
+    if (m_physics) {
+        m_physics->update(deltaTime);
+        
+        // Sincronizar posiciones físicas con visuales
+        if (m_player) {
+            m_player->syncPositionFromPhysics();
+        }
+        
+        // Sincronizar enemigos
+        if (getActiveLevel()) {
+            // Los enemigos se sincronizan automáticamente en su update()
+        }
+    }
 }
 
 void CGame::render() {
@@ -278,8 +333,13 @@ void CGame::processGameInput(float deltaTime) {
     
     handlePlayerMovement(deltaTime);
     
-    // Ataque
-    if (isKeyJustPressed(sf::Keyboard::Space)) {
+    // *** NUEVO: Salto con W o barra espaciadora ***
+    if (isKeyJustPressed(sf::Keyboard::W) || isKeyJustPressed(sf::Keyboard::Space)) {
+        handlePlayerJump();
+    }
+    
+    // Ataque con ENTER (cambiado para evitar conflicto con Space)
+    if (isKeyJustPressed(sf::Keyboard::Enter)) {
         handlePlayerAttack();
     }
     
@@ -384,12 +444,21 @@ void CGame::loadLevel(int levelIndex) {
     }
     
     m_currentLevelIndex = levelIndex;
+    
+    // *** NUEVO: Configurar físicas del nivel ***
+    if (m_physics) {
+        m_levels[levelIndex]->initializePhysics(m_physics.get());
+    }
+    
     m_levels[levelIndex]->loadLevel();
     m_levels[levelIndex]->startLevel();
     
     // Resetear posición del jugador
     if (m_player) {
         m_player->setPosition(100.0f, 100.0f);
+        if (m_physics) {
+            m_player->updatePhysicsPosition(); // *** NUEVO: Sincronizar con físicas ***
+        }
     }
 }
 
@@ -424,45 +493,64 @@ void CGame::createPlayer() {
     m_player = std::make_unique<CPlayer>(playerName);
     m_player->setPosition(100.0f, 100.0f);
     m_player->setSpeed(m_playerSpeed);
+    m_player->setJumpForce(m_jumpForce);    // *** NUEVO: Configurar fuerza de salto ***
     
- std::cout << "Jugador creado en posición: (100, 100)" << std::endl;
-    std::cout << "Tamaño de ventana: 800x600" << std::endl;
+    // *** NUEVO: Inicializar físicas del jugador ***
+    if (m_physics) {
+        m_player->initializePhysics(m_physics.get());
+        std::cout << "✅ Jugador agregado al sistema de físicas" << std::endl;
+    }
+    
+    std::cout << "Jugador creado en posición: (100, 100)" << std::endl;
 }
 
 void CGame::handlePlayerMovement(float deltaTime) {
     if (!m_player) return;
     
-    float moveDistance = m_playerSpeed * deltaTime;
-    sf::Vector2f currentPos = m_player->getPosition();
-    sf::Vector2f newPos = currentPos;
+    float moveDirection = 0.0f;
+    bool isMoving = false;
     
-    bool isMoving = false;  // ← AGREGAR ESTA LÍNEA
-    
-    // Movimiento con WASD
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-        newPos.y -= moveDistance;
-        isMoving = true;  // ← AGREGAR
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-        newPos.y += moveDistance;
-        isMoving = true;  // ← AGREGAR
-    }
+    // Movimiento horizontal con WASD (ahora con físicas)
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-        newPos.x -= moveDistance;
-        isMoving = true;  // ← AGREGAR
+        moveDirection = -1.0f;
+        isMoving = true;
     }
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-        newPos.x += moveDistance;
-        isMoving = true;  // ← AGREGAR
+        moveDirection = 1.0f;
+        isMoving = true;
     }
     
-    // Verificar límites del nivel
-    if (getActiveLevel() && getActiveLevel()->isPositionInBounds(newPos)) {
-        m_player->setPosition(newPos);
+    // *** NUEVO: Aplicar movimiento con físicas ***
+    if (isMoving) {
+        if (m_physics) {
+            m_player->moveWithPhysics(moveDirection);
+        } else {
+            // Fallback al movimiento tradicional
+            float moveDistance = m_playerSpeed * deltaTime;
+            sf::Vector2f currentPos = m_player->getPosition();
+            sf::Vector2f newPos = currentPos;
+            
+            newPos.x += moveDirection * moveDistance;
+            
+            // Verificar límites del nivel
+            if (getActiveLevel() && getActiveLevel()->isPositionInBounds(newPos)) {
+                m_player->setPosition(newPos);
+            }
+        }
     }
     
     // Actualizar estado de correr
-    m_player->setRunning(isMoving);  // ← AGREGAR ESTA LÍNEA
+    m_player->setRunning(isMoving);
+}
+
+// ===============================================
+// NUEVO: Manejar salto del jugador
+// ===============================================
+void CGame::handlePlayerJump() {
+    if (m_player && m_player->isGrounded()) {
+        m_player->jump();
+        std::cout << "🦘 ¡Jugador salta!" << std::endl;
+    }
 }
 
 void CGame::handlePlayerAttack() {
@@ -512,6 +600,50 @@ void CGame::updatePlayerBounds() {
     
     if (outOfBounds) {
         m_player->setPosition(playerPos);
+        if (m_physics) {
+            m_player->updatePhysicsPosition();
+        }
+    }
+}
+
+// ===============================================
+// NUEVOS MÉTODOS DE GESTIÓN DE FÍSICAS
+// ===============================================
+void CGame::syncPlayerWithPhysics() {
+    if (m_player && m_physics) {
+        m_player->syncPositionFromPhysics();
+    }
+}
+
+void CGame::createPhysicsWorld() {
+    // Este método se puede usar para crear un mundo de físicas personalizado
+    if (m_physics) {
+        std::cout << "Mundo de físicas ya creado en initializePhysics()" << std::endl;
+    }
+}
+
+void CGame::createLevelPlatforms() {
+    // Las plataformas se crean en loadLevel() automáticamente
+    if (getActiveLevel() && m_physics) {
+        std::cout << "Plataformas del nivel cargadas automáticamente" << std::endl;
+    }
+}
+
+void CGame::addPlayerToPhysics() {
+    if (m_player && m_physics) {
+        m_player->initializePhysics(m_physics.get());
+    }
+}
+
+void CGame::addEnemyToPhysics(CEnemy* enemy) {
+    if (enemy && m_physics) {
+        enemy->initializePhysics(m_physics.get());
+    }
+}
+
+void CGame::removeEnemyFromPhysics(CEnemy* enemy) {
+    if (enemy && m_physics) {
+        m_physics->destroyBody(enemy);
     }
 }
 
@@ -574,7 +706,7 @@ void CGame::renderMenu() {
     centerText(m_instructionsText, 350.0f);
     m_window.draw(m_instructionsText);
     
-    m_statusText.setString("WASD = Mover, ESPACIO = Atacar, ESC = Pausar");
+    m_statusText.setString("A/D = Mover, W/ESPACIO = Saltar, ENTER = Atacar, ESC = Pausar");
     m_statusText.setCharacterSize(18);
     m_statusText.setFillColor(sf::Color::Yellow);
     centerText(m_statusText, 450.0f);
@@ -682,6 +814,10 @@ void CGame::renderLevelCompleted() {
     m_window.draw(m_instructionsText);
 }
 
+void CGame::renderUI() {
+    renderHUD();
+}
+
 void CGame::renderHUD() {
     // Renderizar barra de salud
     m_window.draw(m_healthBarBackground);
@@ -707,6 +843,17 @@ void CGame::renderHUD() {
         enemyText.setCharacterSize(16);
         enemyText.setFillColor(sf::Color::Cyan);
         m_window.draw(enemyText);
+    }
+}
+
+// ===============================================
+// NUEVO: Renderizado de debug de físicas
+// ===============================================
+void CGame::renderPhysicsDebug() {
+    // Este método se puede usar para renderizar información de debug de físicas
+    // Por ejemplo, dibujar los contornos de los cuerpos físicos
+    if (m_physics) {
+        // Implementar visualización de debug si es necesario
     }
 }
 
@@ -762,10 +909,13 @@ void CGame::loadResources() {
 void CGame::setupGameSettings() {
     // Configurar ajustes del juego
     m_playerSpeed = 150.0f;
+    m_jumpForce = 12.0f;     // ← NUEVO: Fuerza de salto
     m_attackRange = 50.0f;
     m_attackDamage = 25;
     
     std::cout << "Configuración del juego establecida." << std::endl;
+    std::cout << "  - Velocidad del jugador: " << m_playerSpeed << std::endl;
+    std::cout << "  - Fuerza de salto: " << m_jumpForce << std::endl;
 }
 
 // DEBUG
@@ -783,4 +933,25 @@ void CGame::printPlayerPosition() const {
         sf::Vector2f pos = m_player->getPosition();
         std::cout << "Posición del jugador: (" << pos.x << ", " << pos.y << ")" << std::endl;
     }
+}
+
+// ===============================================
+// NUEVO: Debug de físicas
+// ===============================================
+void CGame::printPhysicsInfo() const {
+    std::cout << "=== INFORMACIÓN DE FÍSICAS ===" << std::endl;
+    if (m_physics) {
+        m_physics->debugPrint();
+        
+        if (m_player) {
+            m_player->printPhysicsStatus();
+        }
+        
+        if (getActiveLevel()) {
+            getActiveLevel()->printPhysicsInfo();
+        }
+    } else {
+        std::cout << "Sistema de físicas no inicializado" << std::endl;
+    }
+    std::cout << "==============================" << std::endl;
 }

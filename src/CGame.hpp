@@ -8,6 +8,7 @@
 #include "CPlayer.hpp"
 #include "CLevel.hpp"
 #include "CEnemy.hpp"
+#include "CPhysics.hpp"  // ← NUEVO: Sistema de físicas
 
 enum class GameState {
     MENU,
@@ -35,12 +36,18 @@ private:
     std::vector<std::unique_ptr<CLevel>> m_levels;
     int m_currentLevelIndex;
     
+    // ===================================
+    // NUEVO: Sistema de físicas
+    // ===================================
+    std::unique_ptr<CPhysics> m_physics;
+    
     // Input handling
     bool m_keyPressed[sf::Keyboard::KeyCount];
     float m_inputCooldown;
     
     // Game settings
     float m_playerSpeed;
+    float m_jumpForce;        // ← NUEVO: Fuerza de salto
     float m_attackRange;
     int m_attackDamage;
     
@@ -79,6 +86,7 @@ public:
     int getCurrentLevel() const;  // Devuelve el número del nivel (1, 2, 3...)
     int getTotalScore() const;
     float getTotalPlayTime() const;
+    CPhysics* getPhysics() const;  // ← NUEVO: Acceso al sistema de físicas
     
     // Game control
     void startNewGame();
@@ -103,6 +111,7 @@ private:
     
     // Game logic
     void updateGameplay(float deltaTime);
+    void updatePhysics(float deltaTime);    // ← NUEVO: Actualizar físicas
     void checkCollisions();
     void checkPlayerEnemyCollisions();
     void checkAttackCollisions();
@@ -112,12 +121,23 @@ private:
     void loadLevel(int levelIndex);
     void createLevels();
     CLevel* getActiveLevel();  // Devuelve puntero al nivel activo
+    const CLevel* getActiveLevel() const;  // ← NUEVO: Versión const
     
     // Player management
     void createPlayer();
     void handlePlayerMovement(float deltaTime);
+    void handlePlayerJump();               // ← NUEVO: Manejar salto
     void handlePlayerAttack();
     void updatePlayerBounds();
+    void syncPlayerWithPhysics();          // ← NUEVO: Sincronizar posición física con visual
+    
+    // Physics management (NUEVO)
+    void initializePhysics();
+    void createPhysicsWorld();
+    void createLevelPlatforms();
+    void addPlayerToPhysics();
+    void addEnemyToPhysics(CEnemy* enemy);
+    void removeEnemyFromPhysics(CEnemy* enemy);
     
     // UI and rendering
     void setupUI();
@@ -130,6 +150,7 @@ private:
     void renderLevelCompleted();
     void renderUI();
     void renderHUD();
+    void renderPhysicsDebug();             // ← NUEVO: Debug visual de físicas
     
     // Utility methods
     void centerText(sf::Text& text, float y);
@@ -145,6 +166,7 @@ private:
     // Debug
     void printGameState() const;
     void printPlayerPosition() const;
+    void printPhysicsInfo() const;         // ← NUEVO: Info de físicas
 };
 
 #endif // CGAME_HPP

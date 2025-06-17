@@ -5,6 +5,10 @@
 #include <memory>
 #include <SFML/Graphics.hpp>
 #include "CEnemy.hpp"
+#include <box2d/box2d.h>  // ← NUEVO: Box2D
+
+// Forward declaration
+class CPhysics;
 
 enum class LevelState {
     LOADING,
@@ -23,12 +27,39 @@ struct SpawnPoint {
         : position(x, y), enemyType(type), spawnTime(time), hasSpawned(false) {}
 };
 
+// ===================================
+// NUEVO: Estructura para plataformas físicas
+// ===================================
+struct PhysicalPlatform {
+    sf::RectangleShape shape;    // Representación visual
+    b2Body* physicsBody;         // Cuerpo físico
+    sf::Vector2f position;
+    sf::Vector2f size;
+    sf::Color color;
+    
+    PhysicalPlatform(float x, float y, float w, float h, sf::Color c = sf::Color::Green)
+        : physicsBody(nullptr), position(x, y), size(w, h), color(c) {
+        shape.setPosition(x, y);
+        shape.setSize(sf::Vector2f(w, h));
+        shape.setFillColor(c);
+        shape.setOutlineThickness(2.0f);
+        shape.setOutlineColor(sf::Color::Black);
+    }
+};
+
 class CLevel {
 private:
     // Información del nivel
     int m_levelNumber;
     std::string m_levelName;
     LevelState m_state;
+    
+    // ===================================
+    // NUEVO: Sistema de físicas
+    // ===================================
+    CPhysics* m_physics;                         // Referencia al sistema de físicas
+    std::vector<PhysicalPlatform> m_platforms;   // Plataformas con físicas
+    std::vector<b2Body*> m_wallBodies;          // Muros invisibles (límites)
     
     // Dimensiones y límites
     sf::Vector2f m_levelSize;
@@ -47,7 +78,7 @@ private:
     // Gráficos del nivel
     sf::RectangleShape m_background;
     sf::RectangleShape m_border;
-    std::vector<sf::RectangleShape> m_obstacles;
+    std::vector<sf::RectangleShape> m_obstacles;  // Obstáculos visuales (sin físicas)
     
     // Texturas y sprites para fondos
     sf::Texture m_layer1Texture;
@@ -79,9 +110,22 @@ public:
     bool isLoaded() const;
     bool isCompleted() const;
     
+    // ===================================
+    // NUEVO: Getters para físicas
+    // ===================================
+    const std::vector<PhysicalPlatform>& getPlatforms() const;
+    size_t getPlatformCount() const;
+    
     // Setters
     void setState(LevelState state);
     void setLevelSize(float width, float height);
+    
+    // ===================================
+    // NUEVO: Configuración de físicas
+    // ===================================
+    void initializePhysics(CPhysics* physics);   // Configurar físicas del nivel
+    void createPhysicalPlatforms();              // Crear plataformas con físicas
+    void createLevelBoundaries();                // Crear límites invisibles
     
     // Gestión del nivel
     void loadLevel();
@@ -95,7 +139,13 @@ public:
     void removeDeadEnemies();
     CEnemy* getClosestEnemyToPosition(const sf::Vector2f& position, float maxRange = -1.0f);
     
-    // Gestión de obstáculos
+    // ===================================
+    // NUEVO: Gestión de plataformas físicas
+    // ===================================
+    void addPhysicalPlatform(float x, float y, float width, float height, sf::Color color = sf::Color::Green);
+    void clearPhysicalPlatforms();
+    
+    // Gestión de obstáculos (solo visuales, sin físicas)
     void addObstacle(float x, float y, float width, float height);
     void clearObstacles();
     bool isPositionBlocked(const sf::Vector2f& position) const;
@@ -108,26 +158,46 @@ public:
     void update(float deltaTime, const sf::Vector2f& playerPosition);
     void render(sf::RenderWindow& window);
     
+    // ===================================
+    // NUEVO: Renderizado específico
+    // ===================================
+    void renderPlatforms(sf::RenderWindow& window);  // Renderizar plataformas físicas
+    
     // Debug
     void printLevelInfo() const;
     void printEnemyCount() const;
+    void printPhysicsInfo() const;               // ← NUEVO: Info de físicas del nivel
     
 private:
     // Métodos privados de configuración
     void setupLevelConfiguration();
     void createLevelGeometry();
-    void loadLevelTextures();  // NUEVO MÉTODO
+    void loadLevelTextures();
     void spawnEnemiesFromPoints(float deltaTime);
     void updateEnemies(float deltaTime, const sf::Vector2f& playerPosition);
     void renderEnemies(sf::RenderWindow& window);
     void renderObstacles(sf::RenderWindow& window);
     std::string levelStateToString(LevelState state) const;
     
-    // Configuraciones específicas por nivel
+    // ===================================
+    // NUEVO: Métodos privados de físicas
+    // ===================================
+    void setupPhysicalPlatformsForLevel();       // Configurar plataformas específicas del nivel
+    void destroyPhysicalPlatforms();             // Destruir plataformas físicas
+    void destroyLevelBoundaries();               // Destruir límites
+    
+    // Configuraciones específicas por nivel (actualizadas)
     void configureLevel1();
     void configureLevel2();
     void configureLevel3();
     void configureDefaultLevel();
+    
+    // ===================================
+    // NUEVO: Configuraciones de plataformas por nivel
+    // ===================================
+    void configurePlatformsLevel1();
+    void configurePlatformsLevel2();
+    void configurePlatformsLevel3();
 };
 
 #endif // CLEVEL_HPP

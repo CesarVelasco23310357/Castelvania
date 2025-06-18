@@ -164,7 +164,7 @@ void CGame::restartLevel() {
     if (getActiveLevel()) {
         getActiveLevel()->resetLevel();
         if (m_player) {
-            m_player->setPosition(100.0f, 100.0f);
+            m_player->setPosition(100.0f, 400.0f);  // ← CORREGIDO: Posición inicial más alta
             m_player->setHealth(m_player->getMaxHealth());
             // *** NUEVO: Sincronizar con físicas ***
             if (m_physics && m_player->getPhysicsBody()) {
@@ -274,7 +274,7 @@ void CGame::update(float deltaTime) {
 }
 
 // ===============================================
-// CORREGIDO: Actualización del mundo físico con mejores verificaciones
+// CORREGIDO: Actualización del mundo físico mejorada
 // ===============================================
 void CGame::updatePhysics(float deltaTime) {
     if (!m_physics) {
@@ -337,7 +337,10 @@ void CGame::processGameInput(float deltaTime) {
     if (!m_player) return;
     
     handlePlayerMovement(deltaTime);
-    
+    if (isKeyJustPressed(sf::Keyboard::I)) 
+    {
+    debugPositions();
+    }   
     if (isKeyJustPressed(sf::Keyboard::W) || isKeyJustPressed(sf::Keyboard::Space)) {
         handlePlayerJump();
     }
@@ -350,9 +353,20 @@ void CGame::processGameInput(float deltaTime) {
         restartLevel();
     }
     
-    // ✅ DEBUG con tecla P
+    // ✅ DEBUG CONTROLS
     if (isKeyJustPressed(sf::Keyboard::P)) {
         debugFullPhysicsState();
+    }
+ 
+    // ===============================================
+    // NUEVO: Controles de debug adicionales
+    // ===============================================
+    if (isKeyJustPressed(sf::Keyboard::T)) {
+        debugPlatformInfo();
+    }
+    
+    if (isKeyJustPressed(sf::Keyboard::Y)) {
+        forcePlayerRepositioning();
     }
 }
 
@@ -451,7 +465,7 @@ void CGame::updateGameState() {
 
 // LEVEL MANAGEMENT
 // ===============================================
-// CORREGIDO: Mejorar loadLevel con mejor manejo de errores
+// CORREGIDO: Mejorar loadLevel con mejor manejo de físicas
 // ===============================================
 void CGame::loadLevel(int levelIndex) {
     if (levelIndex < 0 || levelIndex >= static_cast<int>(m_levels.size())) {
@@ -460,7 +474,7 @@ void CGame::loadLevel(int levelIndex) {
         return;
     }
     
-    std::cout << "Cargando nivel " << (levelIndex + 1) << "..." << std::endl;
+    std::cout << "\n🎮 CARGANDO NIVEL " << (levelIndex + 1) << "..." << std::endl;
     
     // Descargar nivel anterior si existe
     if (m_currentLevelIndex >= 0 && m_currentLevelIndex < static_cast<int>(m_levels.size())) {
@@ -478,8 +492,11 @@ void CGame::loadLevel(int levelIndex) {
         return;
     }
     
-    // Configurar físicas del nivel
+    // ===================================
+    // CORREGIDO: Configurar físicas del nivel ANTES de cargar
+    // ===================================
     if (m_physics) {
+        std::cout << "⚙️ Inicializando físicas del nivel..." << std::endl;
         m_levels[levelIndex]->initializePhysics(m_physics.get());
     } else {
         std::cerr << "⚠️ Warning: Cargando nivel sin sistema de físicas" << std::endl;
@@ -488,23 +505,43 @@ void CGame::loadLevel(int levelIndex) {
     try {
         m_levels[levelIndex]->loadLevel();
         m_levels[levelIndex]->startLevel();
+        
+        // ===================================
+        // NUEVO: Verificar que las plataformas se crearon correctamente
+        // ===================================
+        std::cout << "🔍 Verificando plataformas creadas..." << std::endl;
+        std::cout << "Total de plataformas: " << m_levels[levelIndex]->getPlatformCount() << std::endl;
+        
+        if (m_physics) {
+            std::cout << "Total de cuerpos físicos: " << m_physics->getBodyCount() << std::endl;
+        }
+        
     } catch (const std::exception& e) {
         std::cerr << "❌ Error al cargar nivel: " << e.what() << std::endl;
         m_gameState = GameState::GAME_OVER;
         return;
     }
     
-    // Resetear posición del jugador
+    // ===================================
+    // CORREGIDO: Reposicionar jugador para este nivel específicamente
+    // ===================================
     if (m_player) {
-        m_player->setPosition(100.0f, 100.0f);
+        float playerX = 100.0f;
+        float playerY = 400.0f;  // ← CORREGIDO: Arriba del suelo para que caiga
+        
+        std::cout << "🔄 Reposicionando jugador a (" << playerX << ", " << playerY << ")" << std::endl;
+        
+        m_player->setPosition(playerX, playerY);
+        m_player->setHealth(m_player->getMaxHealth());
+        
+        // Sincronizar con físicas
         if (m_physics && m_player->getPhysicsBody()) {
             m_player->updatePhysicsPosition();
+            std::cout << "✅ Posición del jugador sincronizada con físicas" << std::endl;
         }
-    } else {
-        std::cerr << "⚠️ Warning: Jugador no existe al cargar nivel" << std::endl;
     }
     
-    std::cout << "✅ Nivel " << (levelIndex + 1) << " cargado exitosamente" << std::endl;
+    std::cout << "✅ Nivel " << (levelIndex + 1) << " cargado exitosamente\n" << std::endl;
 }
 
 void CGame::createLevels() {
@@ -540,18 +577,23 @@ const CLevel* CGame::getActiveLevel() const {
 // CORREGIDO: Mejorar createPlayer para evitar bloqueo de UI
 // ===============================================
 void CGame::createPlayer() {
-    // PROBLEMA ORIGINAL: std::cin bloquea la interfaz gráfica
-    // SOLUCIÓN: Usar nombre por defecto o sistema de input del juego
+    std::string playerName = "Héroe"; // Nombre por defecto para evitar bloqueo de UI
     
-    std::string playerName = "Héroe"; // Nombre por defecto
-    
-    // Opción alternativa: podrías implementar un sistema de input en el menú
-    // Por ahora usamos nombre por defecto para evitar el bloqueo
-    
-    std::cout << "Creando jugador con nombre: " << playerName << std::endl;
+    std::cout << "\n👤 CREANDO JUGADOR..." << std::endl;
+    std::cout << "Nombre: " << playerName << std::endl;
     
     m_player = std::make_unique<CPlayer>(playerName);
-    m_player->setPosition(100.0f, 100.0f);
+    
+    // ===================================
+    // CORREGIDO: Posición inicial del jugador ajustada
+    // El suelo está en Y=570, así que colocamos al jugador arriba para que caiga
+    // ===================================
+    float startX = 400.0f;  // Centro de pantalla
+    float startY = 350.0f;  // ARRIBA del suelo negro
+    
+    std::cout << "Posición inicial: (" << startX << ", " << startY << ")" << std::endl;
+    
+    m_player->setPosition(startX, startY);
     m_player->setSpeed(m_playerSpeed);
     m_player->setJumpForce(m_jumpForce);
     
@@ -559,9 +601,18 @@ void CGame::createPlayer() {
     if (m_physics) {
         m_player->initializePhysics(m_physics.get());
         std::cout << "✅ Jugador agregado al sistema de físicas" << std::endl;
+        
+        // Verificar que el cuerpo físico se creó correctamente
+        if (m_player->getPhysicsBody()) {
+            std::cout << "✅ Cuerpo físico del jugador verificado" << std::endl;
+        } else {
+            std::cerr << "❌ ERROR: Cuerpo físico del jugador NO se creó" << std::endl;
+        }
+    } else {
+        std::cerr << "❌ ERROR: Sistema de físicas no disponible" << std::endl;
     }
     
-    std::cout << "Jugador creado en posición: (100, 100)" << std::endl;
+    std::cout << "👤 Jugador creado exitosamente\n" << std::endl;
 }
 
 void CGame::handlePlayerMovement(float deltaTime) {
@@ -570,7 +621,7 @@ void CGame::handlePlayerMovement(float deltaTime) {
     float moveDirection = 0.0f;
     bool isMoving = false;
     
-    // Movimiento horizontal con WASD (ahora con físicas)
+    // Detectar teclas A/D
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
         moveDirection = -1.0f;
         isMoving = true;
@@ -580,31 +631,79 @@ void CGame::handlePlayerMovement(float deltaTime) {
         isMoving = true;
     }
     
-    // *** NUEVO: Aplicar movimiento con físicas ***
+    // Aplicar movimiento
     if (isMoving) {
-        if (m_physics) {
-            m_player->moveWithPhysics(moveDirection);
+        if (m_physics && m_player->getPhysicsBody()) {
+            // Usar físicas
+            float forceX = moveDirection * 15.0f;
+            m_physics->applyForce(m_player.get(), forceX, 0.0f);
+            
+            // Limitar velocidad máxima
+            b2Body* body = m_player->getPhysicsBody();
+            b2Vec2 velocity = body->GetLinearVelocity();
+            
+            if (std::abs(velocity.x) > 8.0f) {
+                velocity.x = (velocity.x > 0) ? 8.0f : -8.0f;
+                body->SetLinearVelocity(velocity);
+            }
         } else {
-            // Fallback al movimiento tradicional
+            // Fallback sin físicas
             float moveDistance = m_playerSpeed * deltaTime;
             sf::Vector2f currentPos = m_player->getPosition();
             sf::Vector2f newPos = currentPos;
             
             newPos.x += moveDirection * moveDistance;
             
-            // Verificar límites del nivel
             if (getActiveLevel() && getActiveLevel()->isPositionInBounds(newPos)) {
                 m_player->setPosition(newPos);
             }
         }
+    } else {
+        // Parar movimiento horizontal
+        if (m_physics && m_player->getPhysicsBody()) {
+            b2Body* body = m_player->getPhysicsBody();
+            b2Vec2 velocity = body->GetLinearVelocity();
+            velocity.x *= 0.85f;  // Freno gradual
+            body->SetLinearVelocity(velocity);
+        }
     }
     
-    // Actualizar estado de correr
+    // Actualizar animación
     m_player->setRunning(isMoving);
 }
-
+void CGame::debugMovement() {
+    std::cout << "\n🏃 DEBUG DE MOVIMIENTO" << std::endl;
+    std::cout << "======================" << std::endl;
+    
+    // Test de teclas
+    bool keyA = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
+    bool keyD = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
+    
+    std::cout << "⌨️ TECLAS:" << std::endl;
+    std::cout << "   A (izquierda): " << (keyA ? "SÍ" : "NO") << std::endl;
+    std::cout << "   D (derecha): " << (keyD ? "SÍ" : "NO") << std::endl;
+    
+    // Estado del jugador
+    if (m_player && m_player->getPhysicsBody()) {
+        sf::Vector2f pos = m_player->getPosition();
+        b2Vec2 velocity = m_player->getPhysicsBody()->GetLinearVelocity();
+        
+        std::cout << "\n👤 JUGADOR:" << std::endl;
+        std::cout << "   Posición: (" << pos.x << ", " << pos.y << ")" << std::endl;
+        std::cout << "   Velocidad: (" << velocity.x << ", " << velocity.y << ")" << std::endl;
+        std::cout << "   En suelo: " << (m_player->isGrounded() ? "SÍ" : "NO") << std::endl;
+        
+        if (std::abs(velocity.x) > 0.1f) {
+            std::cout << "   🏃 MOVIÉNDOSE " << (velocity.x > 0 ? "DERECHA" : "IZQUIERDA") << std::endl;
+        } else {
+            std::cout << "   🛑 PARADO" << std::endl;
+        }
+    }
+    
+    std::cout << "======================\n" << std::endl;
+}
 // ===============================================
-// CORREGIDO: Mejorar handlePlayerJump con más verificaciones
+// CORREGIDO: Mejorar handlePlayerJump con más debug
 // ===============================================
 void CGame::handlePlayerJump() {
     if (!m_player) {
@@ -622,11 +721,23 @@ void CGame::handlePlayerJump() {
         return;
     }
     
-    if (m_player->isGrounded() && m_player->isAlive()) {
+    // ===================================
+    // NUEVO: Debug más detallado del salto
+    // ===================================
+    bool isGrounded = m_player->isGrounded();
+    bool isAlive = m_player->isAlive();
+    
+    std::cout << "🦘 Intento de salto:" << std::endl;
+    std::cout << "   - En suelo: " << (isGrounded ? "SÍ" : "NO") << std::endl;
+    std::cout << "   - Vivo: " << (isAlive ? "SÍ" : "NO") << std::endl;
+    
+    if (isGrounded && isAlive) {
         m_player->jump();
-        std::cout << "🦘 ¡Jugador salta!" << std::endl;
-    } else if (!m_player->isGrounded()) {
-        std::cout << "❌ No se puede saltar: jugador no está en el suelo" << std::endl;
+        std::cout << "✅ ¡Salto ejecutado!" << std::endl;
+    } else if (!isGrounded) {
+        std::cout << "❌ No se puede saltar: jugador en el aire" << std::endl;
+    } else if (!isAlive) {
+        std::cout << "❌ No se puede saltar: jugador muerto" << std::endl;
     }
 }
 
@@ -950,35 +1061,129 @@ void CGame::updateHealthBar() {
     m_healthBar.setFillColor(getHealthBarColor(healthPercentage));
 }
 
+// ===============================================
+// CORREGIDO: Debug completo mejorado
+// ===============================================
 void CGame::debugFullPhysicsState() {
-    std::cout << "\n=== 🔍 DEBUG COMPLETO ===" << std::endl;
+    std::cout << "\n════════════════════════════════" << std::endl;
+    std::cout << "🔍 DEBUG COMPLETO DEL SISTEMA" << std::endl;
+    std::cout << "════════════════════════════════" << std::endl;
     
+    // Estado del sistema de físicas
     if (m_physics) {
-        std::cout << "✅ Físicas activas - Cuerpos: " << m_physics->getBodyCount() << std::endl;
+        std::cout << "⚙️ SISTEMA DE FÍSICAS: ACTIVO" << std::endl;
+        std::cout << "   Cuerpos totales: " << m_physics->getBodyCount() << std::endl;
     } else {
-        std::cout << "❌ Físicas INACTIVAS" << std::endl;
+        std::cout << "❌ SISTEMA DE FÍSICAS: INACTIVO" << std::endl;
         return;
     }
     
+    // Estado del jugador
     if (m_player) {
         sf::Vector2f pos = m_player->getPosition();
-        std::cout << "👤 Jugador en: (" << pos.x << ", " << pos.y << ")" << std::endl;
+        sf::Vector2f vel = m_player->getVelocity();
+        
+        std::cout << "\n👤 JUGADOR:" << std::endl;
+        std::cout << "   Posición: (" << pos.x << ", " << pos.y << ")" << std::endl;
+        std::cout << "   Velocidad: (" << vel.x << ", " << vel.y << ")" << std::endl;
         std::cout << "   En suelo: " << (m_player->isGrounded() ? "SÍ" : "NO") << std::endl;
+        std::cout << "   Puede saltar: " << (m_physics->canJump(m_player.get()) ? "SÍ" : "NO") << std::endl;
         
         if (m_player->getPhysicsBody()) {
-            b2Vec2 vel = m_player->getPhysicsBody()->GetLinearVelocity();
-            std::cout << "   Velocidad: (" << vel.x << ", " << vel.y << ")" << std::endl;
+            b2Vec2 physicsPos = m_player->getPhysicsBody()->GetPosition();
+            b2Vec2 physicsVel = m_player->getPhysicsBody()->GetLinearVelocity();
+            std::cout << "   Pos. física: (" << physicsPos.x << ", " << physicsPos.y << ") metros" << std::endl;
+            std::cout << "   Vel. física: (" << physicsVel.x << ", " << physicsVel.y << ") m/s" << std::endl;
         } else {
             std::cout << "   ❌ SIN CUERPO FÍSICO" << std::endl;
         }
+    } else {
+        std::cout << "\n❌ JUGADOR: NO EXISTE" << std::endl;
     }
     
+    // Estado del nivel actual
     if (getActiveLevel()) {
-        std::cout << "🏗️ Plataformas: " << getActiveLevel()->getPlatformCount() << std::endl;
+        std::cout << "\n🏗️ NIVEL ACTUAL:" << std::endl;
+        std::cout << "   Número: " << getCurrentLevel() << std::endl;
+        std::cout << "   Plataformas: " << getActiveLevel()->getPlatformCount() << std::endl;
+        std::cout << "   Enemigos vivos: " << getActiveLevel()->getEnemiesAlive() << std::endl;
+    } else {
+        std::cout << "\n❌ NIVEL ACTUAL: NO EXISTE" << std::endl;
+    }
+    
+    // Estado detallado de las físicas
+    if (m_physics) {
+        std::cout << "\n🔧 DETALLES DE FÍSICAS:" << std::endl;
+        m_physics->debugPrint();
+    }
+    
+    std::cout << "════════════════════════════════\n" << std::endl;
+}
+
+// ===============================================
+// NUEVO: Función de debug específica para plataformas
+// ===============================================
+void CGame::debugPlatformInfo() {
+    std::cout << "\n🟩 DEBUG DE PLATAFORMAS" << std::endl;
+    std::cout << "========================" << std::endl;
+    
+    if (!getActiveLevel()) {
+        std::cout << "❌ No hay nivel activo" << std::endl;
+        return;
+    }
+    
+    const auto& platforms = getActiveLevel()->getPlatforms();
+    std::cout << "Total de plataformas: " << platforms.size() << std::endl;
+    
+    for (size_t i = 0; i < platforms.size(); i++) {
+        const auto& platform = platforms[i];
+        std::cout << "Plataforma " << (i+1) << ":" << std::endl;
+        std::cout << "   Posición: (" << platform.position.x << ", " << platform.position.y << ")" << std::endl;
+        std::cout << "   Tamaño: " << platform.size.x << "x" << platform.size.y << std::endl;
+        std::cout << "   Color: ";
+        
+        sf::Color color = platform.color;
+        if (color == sf::Color::Black) std::cout << "NEGRO (SUELO)";
+        else if (color == sf::Color::Green) std::cout << "VERDE";
+        else if (color == sf::Color::Yellow) std::cout << "AMARILLO";
+        else if (color == sf::Color::Red) std::cout << "ROJO";
+        else if (color == sf::Color::Cyan) std::cout << "CYAN";
+        else std::cout << "Otro";
+        
+        std::cout << std::endl;
+        std::cout << "   Cuerpo físico: " << (platform.physicsBody ? "EXISTE" : "NULO") << std::endl;
+        std::cout << std::endl;
     }
     
     std::cout << "========================\n" << std::endl;
 }
+
+// ===============================================
+// NUEVO: Función para forzar reposicionamiento del jugador
+// ===============================================
+void CGame::forcePlayerRepositioning() {
+    if (!m_player || !m_physics) return;
+    
+    std::cout << "\n🔄 FORZANDO REPOSICIONAMIENTO DEL JUGADOR..." << std::endl;
+    
+    // Posicionar al jugador en una posición segura arriba del suelo
+    float safeX = 100.0f;
+    float safeY = 300.0f;  // Bien arriba del suelo negro (Y=570)
+    
+    // Detener toda velocidad
+    if (m_player->getPhysicsBody()) {
+        m_player->getPhysicsBody()->SetLinearVelocity(b2Vec2(0, 0));
+        m_player->getPhysicsBody()->SetAngularVelocity(0);
+    }
+    
+    // Reposicionar
+    m_player->setPosition(safeX, safeY);
+    m_player->updatePhysicsPosition();
+    
+    std::cout << "✅ Jugador reposicionado a (" << safeX << ", " << safeY << ")" << std::endl;
+    std::cout << "   Debería caer al suelo negro en Y=570\n" << std::endl;
+}
+
 std::string CGame::gameStateToString(GameState state) const {
     switch (state) {
         case GameState::MENU: return "Menú";
@@ -1015,7 +1220,7 @@ void CGame::loadResources() {
 void CGame::setupGameSettings() {
     // Configurar ajustes del juego
     m_playerSpeed = 150.0f;
-    m_jumpForce = 12.0f;     // ← NUEVO: Fuerza de salto
+    m_jumpForce = 18.0f;     // ← NUEVO: Fuerza de salto
     m_attackRange = 50.0f;
     m_attackDamage = 25;
     
@@ -1060,4 +1265,12 @@ void CGame::printPhysicsInfo() const {
         std::cout << "Sistema de físicas no inicializado" << std::endl;
     }
     std::cout << "==============================" << std::endl;
+}
+void CGame::debugPositions() {
+    std::cout << "\n🔍 DEBUG DE POSICIONES" << std::endl;
+    if (m_player) {
+        sf::Vector2f pos = m_player->getPosition();
+        std::cout << "Jugador: (" << pos.x << ", " << pos.y << ")" << std::endl;
+        std::cout << "Suelo en Y=450, jugador " << (pos.y < 450 ? "ARRIBA" : "ABAJO") << std::endl;
+    }
 }

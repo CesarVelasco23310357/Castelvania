@@ -133,6 +133,7 @@ public:
     void resetLevel();
     void startLevel();
     
+    
     // Gestión de enemigos
     void addEnemy(EnemyType type, float x, float y);
     void addSpawnPoint(float x, float y, EnemyType type, float spawnTime = 0.0f);

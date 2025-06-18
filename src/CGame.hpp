@@ -130,7 +130,7 @@ private:
     void handlePlayerAttack();
     void updatePlayerBounds();
     void syncPlayerWithPhysics();                 // Sincronizar posición física con visual
-    
+    void debugPlatformInfo();
     // Physics management
     void initializePhysics();
     void createPhysicsWorld();
@@ -138,7 +138,7 @@ private:
     void addPlayerToPhysics();
     void addEnemyToPhysics(CEnemy* enemy);
     void removeEnemyFromPhysics(CEnemy* enemy);
-    
+    void debugPositions(); 
     // UI and rendering
     void setupUI();
     void updateUI();
@@ -151,13 +151,15 @@ private:
     void renderUI();
     void renderHUD();
     void renderPhysicsDebug();                    // Debug visual de físicas
-    
+    void debugMovement();
+    void debugPlatformSync(); 
     // Utility methods
     void centerText(sf::Text& text, float y);
     void updateHealthBar();
     std::string gameStateToString(GameState state) const;
     sf::Color getHealthBarColor(float healthPercentage) const;
     void debugFullPhysicsState();
+    
     // Game setup
     void initializeWindow();
     void loadResources();
@@ -167,6 +169,12 @@ private:
     void printGameState() const;
     void printPlayerPosition() const;
     void printPhysicsInfo() const;                // Información de físicas para debug
+    
+    // ===============================================
+    // NUEVO: Funciones de debug adicionales
+    // ===============================================
+    void debugPlatformInfo() const;               // Debug específico de plataformas
+    void forcePlayerRepositioning();              // Forzar reposicionamiento del jugador
 };
 
 #endif // CGAME_HPP

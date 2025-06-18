@@ -32,23 +32,46 @@ struct PhysicsBody {
         : body(b), type(t), userData(data) {}
 };
 
+// ===============================================
+// NUEVO: ContactListener para detectar colisiones
+// ===============================================
+class PhysicsContactListener : public b2ContactListener {
+private:
+    std::unordered_map<void*, int> m_groundContacts; // Conteo de contactos con el suelo por jugador
+    
+public:
+    void BeginContact(b2Contact* contact) override;
+    void EndContact(b2Contact* contact) override;
+    
+    bool isPlayerOnGround(void* playerData);
+    void updateGroundContacts();
+    
+private:
+    bool isPlayerPlatformContact(b2Fixture* fixtureA, b2Fixture* fixtureB);
+};
+
 class CPhysics {
 private:
     std::unique_ptr<b2World> m_world;
     std::unordered_map<void*, PhysicsBody> m_bodies;
     
     // ===============================================
+    // NUEVO: ContactListener para detectar colisiones
+    // ===============================================
+    std::unique_ptr<PhysicsContactListener> m_contactListener;
+    
+    // ===============================================
     // CORREGIDO: Configuración del mundo mejorada
     // ===============================================
     static constexpr float GRAVITY_X = 0.0f;
     static constexpr float GRAVITY_Y = 20.0f;        // ← CORREGIDO: De 9.8f a 20.0f para mejor adherencia
-    static constexpr float SCALE = 30.0f;           // ← CORREGIDO: De 30.0f a 20.0f para mejor precisión
+    static constexpr float SCALE = 30.0f;           // ← CORREGIDO: De 30.0f a 30.0f para mejor precisión
     
     // ===============================================
     // CORREGIDO: Configuración de simulación mejorada
     // ===============================================
     static constexpr int32 VELOCITY_ITERATIONS = 8;  // ← CORREGIDO: De 6 a 8 para más precisión
-    static constexpr int32 POSITION_ITERATIONS = 2;  // ← CORREGIDO: De 2 a 3 para mejor estabilidad
+    static constexpr int32 POSITION_ITERATIONS = 3;  // ← CORREGIDO: De 2 a 3 para mejor estabilidad
     
 public:
     // Constructor y destructor
@@ -83,9 +106,14 @@ public:
     void applyForce(void* userData, float x, float y);
     void applyImpulse(void* userData, float x, float y);
     
-    // Verificaciones
+    // Verificaciones mejoradas
     bool isBodyOnGround(void* userData);
     bool canJump(void* userData);
+    
+    // ===============================================
+    // NUEVO: Acceso al ContactListener
+    // ===============================================
+    PhysicsContactListener* getContactListener() const;
     
     // Debug
     void debugPrint() const;

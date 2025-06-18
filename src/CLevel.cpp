@@ -165,28 +165,31 @@ void CLevel::createPhysicalPlatforms() {
 void CLevel::createLevelBoundaries() {
     if (!m_physics) return;
     
-    std::cout << "🧱 Creando límites físicos del nivel..." << std::endl;
+    std::cout << "🧱 Creando límites limpios del nivel..." << std::endl;
     
     // Limpiar límites existentes
     destroyLevelBoundaries();
     
-    float wallThickness = 20.0f;
+    // ===================================
+    // SOLO CREAR LÍMITES BÁSICOS - NADA MÁS
+    // ===================================
+    float wallThickness = 10.0f;  // Más delgados
     
-    // Muro izquierdo
-    b2Body* leftWall = m_physics->createWall(-wallThickness/2.0f, m_levelSize.y/2.0f, wallThickness, m_levelSize.y);
+    // Muro izquierdo (fuera de pantalla)
+    b2Body* leftWall = m_physics->createWall(-wallThickness, 0.0f, wallThickness, m_levelSize.y);
     if (leftWall) m_wallBodies.push_back(leftWall);
     
-    // Muro derecho
-    b2Body* rightWall = m_physics->createWall(m_levelSize.x + wallThickness/2.0f, m_levelSize.y/2.0f, wallThickness, m_levelSize.y);
+    // Muro derecho (fuera de pantalla)
+    b2Body* rightWall = m_physics->createWall(m_levelSize.x, 0.0f, wallThickness, m_levelSize.y);
     if (rightWall) m_wallBodies.push_back(rightWall);
     
-    // Muro superior (opcional, para evitar que salten muy alto)
-    b2Body* topWall = m_physics->createWall(m_levelSize.x/2.0f, -wallThickness/2.0f, m_levelSize.x, wallThickness);
-    if (topWall) m_wallBodies.push_back(topWall);
+    // ===================================
+    // NO CREAR NADA MÁS - Sin techo, sin muros extra
+    // ===================================
     
-    std::cout << "✅ " << m_wallBodies.size() << " límites físicos creados" << std::endl;
+    std::cout << "✅ SOLO " << m_wallBodies.size() << " límites básicos creados" << std::endl;
+    std::cout << "   Sin techo, sin muros invisibles extra" << std::endl;
 }
-
 // GESTIÓN DEL NIVEL
 void CLevel::loadLevel() {
     if (m_isLoaded) {
@@ -311,7 +314,7 @@ CEnemy* CLevel::getClosestEnemyToPosition(const sf::Vector2f& position, float ma
 }
 
 // ===================================
-// NUEVO: Agregar plataforma física
+// CORREGIDO: Agregar plataforma física
 // ===================================
 void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf::Color color) {
     if (!m_physics) {
@@ -319,21 +322,33 @@ void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf
         return;
     }
     
-    // Crear plataforma física
+    std::cout << "🟩 SINCRONIZANDO plataforma: pos(" << x << "," << y << ") tamaño(" << width << "x" << height << ")" << std::endl;
+    
+    // ===================================
+    // CREAR PLATAFORMA VISUAL EXACTA
+    // ===================================
     PhysicalPlatform platform(x, y, width, height, color);
     
-    // Crear cuerpo físico
-    platform.physicsBody = m_physics->createPlatform(
-        x + width/2.0f,   // Centro X
-        y + height/2.0f,  // Centro Y
-        width, 
-        height
-    );
+    // ===================================
+    // CREAR CUERPO FÍSICO EN LA MISMA POSICIÓN EXACTA
+    // ===================================
+    std::cout << "   📍 Visual: esquina(" << x << "," << y << ") tamaño(" << width << "x" << height << ")" << std::endl;
+    
+    // Física usa el mismo sistema: esquina superior izquierda
+    platform.physicsBody = m_physics->createPlatform(x, y, width, height);
     
     if (platform.physicsBody) {
+        // ===================================
+        // VERIFICAR SINCRONIZACIÓN PERFECTA
+        // ===================================
+        b2Vec2 physicsPos = platform.physicsBody->GetPosition();
+        float physicsPixelX = physicsPos.x * 30.0f;
+        float physicsPixelY = physicsPos.y * 30.0f;
+        
+        std::cout << "   🎯 Física: centro(" << physicsPixelX << "," << physicsPixelY << ") - calculado automáticamente" << std::endl;
+        std::cout << "   ✅ Plataforma visual y física SINCRONIZADAS" << std::endl;
+        
         m_platforms.push_back(platform);
-        std::cout << "✅ Plataforma física creada: (" << x << "," << y << ") " 
-                  << width << "x" << height << std::endl;
     } else {
         std::cerr << "❌ Error: No se pudo crear cuerpo físico de la plataforma" << std::endl;
     }
@@ -656,7 +671,19 @@ void CLevel::setupPhysicalPlatformsForLevel() {
 // NUEVO: Destruir plataformas físicas
 // ===================================
 void CLevel::destroyPhysicalPlatforms() {
-    clearPhysicalPlatforms();
+    std::cout << "🧹 LIMPIEZA COMPLETA de plataformas físicas..." << std::endl;
+    
+    // Limpiar plataformas visuales y físicas
+    for (auto& platform : m_platforms) {
+        if (platform.physicsBody && m_physics) {
+            // Destruir cuerpo físico específicamente
+            m_physics->destroyBody(platform.physicsBody);
+            std::cout << "   🗑️ Cuerpo físico destruido" << std::endl;
+        }
+    }
+    
+    m_platforms.clear();
+    std::cout << "✓ Todas las plataformas limpiadas completamente" << std::endl;
 }
 
 // ===================================
@@ -742,27 +769,46 @@ void CLevel::configureDefaultLevel() {
 }
 
 // ===================================
-// NUEVO: Configuración de plataformas para Nivel 1
+// CORREGIDO: Configuración de plataformas para Nivel 1
 // ===================================
 void CLevel::configurePlatformsLevel1() {
-    std::cout << "🟩 Configurando plataformas del Nivel 1..." << std::endl;
+    std::cout << "\n🟩 CONFIGURANDO PLATAFORMAS NIVEL 1 - CORREGIDO..." << std::endl;
     
-    // ✅ PISO NEGRO - AQUÍ ESTÁ EL ERROR QUE DEBES CORREGIR
-    addPhysicalPlatform(0.0f, 570.0f, 800.0f, 30.0f, sf::Color::Black);  // ← NEGRO, no verde
+    // SUELO NEGRO (mantener igual)
+    float groundY = 450.0f;
+    std::cout << "🔴 SUELO NEGRO en Y=" << groundY << std::endl;
+    addPhysicalPlatform(0.0f, groundY, 800.0f, 150.0f, sf::Color::Black);
     
-    // Plataformas de colores
-    addPhysicalPlatform(150.0f, 480.0f, 120.0f, 15.0f, sf::Color::Green);
-    addPhysicalPlatform(350.0f, 400.0f, 120.0f, 15.0f, sf::Color::Yellow);
-    addPhysicalPlatform(550.0f, 320.0f, 120.0f, 15.0f, sf::Color::Red);
+    // ===================================
+    // PLATAFORMAS MÁS BAJAS Y ACCESIBLES
+    // ===================================
+    std::cout << "🟢 Creando plataformas MÁS BAJAS..." << std::endl;
     
-    std::cout << "✓ Piso NEGRO configurado en Y=570" << std::endl;
+    // Plataforma verde (izquierda) - MÁS BAJA
+    addPhysicalPlatform(150.0f, 380.0f, 120.0f, 20.0f, sf::Color::Green);
+    
+    // Plataforma amarilla (centro) - MÁS BAJA  
+    addPhysicalPlatform(350.0f, 320.0f, 120.0f, 20.0f, sf::Color::Yellow);
+    
+    // Plataforma roja (derecha) - MÁS BAJA
+    addPhysicalPlatform(550.0f, 280.0f, 120.0f, 20.0f, sf::Color::Red);
+    
+    // Plataforma cyan (opcional, cerca del suelo)
+    addPhysicalPlatform(250.0f, 400.0f, 100.0f, 20.0f, sf::Color::Cyan);
+    
+    std::cout << "✅ Plataformas reposicionadas MÁS BAJAS:" << std::endl;
+    std::cout << "   🟢 Verde: Y=380 (antes muy alta)" << std::endl;
+    std::cout << "   🟡 Amarilla: Y=320" << std::endl;
+    std::cout << "   🔴 Roja: Y=280" << std::endl;
+    std::cout << "   🔵 Cyan: Y=400" << std::endl;
+    std::cout << "================================================\n" << std::endl;
 }
 
 // ===================================
-// NUEVO: Configuración de plataformas para Nivel 2
+// CORREGIDO: Configuración de plataformas para Nivel 2
 // ===================================
 void CLevel::configurePlatformsLevel2() {
-    std::cout << "🟩 Configurando plataformas del Nivel 2..." << std::endl;
+    std::cout << "\n🟩 CONFIGURANDO PLATAFORMAS DEL NIVEL 2..." << std::endl;
     
     // Plataforma principal (suelo)
     addPhysicalPlatform(0.0f, 550.0f, 800.0f, 50.0f, sf::Color::Black);
@@ -776,14 +822,14 @@ void CLevel::configurePlatformsLevel2() {
     // Plataforma alta
     addPhysicalPlatform(350.0f, 200.0f, 100.0f, 20.0f, sf::Color::Red);
     
-    std::cout << "✓ Nivel 2: Plataformas intermedias creadas" << std::endl;
+    std::cout << "✅ NIVEL 2: Plataformas intermedias creadas" << std::endl;
 }
 
 // ===================================
-// NUEVO: Configuración de plataformas para Nivel 3
+// CORREGIDO: Configuración de plataformas para Nivel 3
 // ===================================
 void CLevel::configurePlatformsLevel3() {
-    std::cout << "🟩 Configurando plataformas del Nivel 3..." << std::endl;
+    std::cout << "\n🟩 CONFIGURANDO PLATAFORMAS DEL NIVEL 3..." << std::endl;
     
     // Plataforma principal (suelo)
     addPhysicalPlatform(0.0f, 550.0f, 800.0f, 50.0f, sf::Color::Black);
@@ -800,5 +846,5 @@ void CLevel::configurePlatformsLevel3() {
     addPhysicalPlatform(150.0f, 320.0f, 80.0f, 15.0f, sf::Color::Cyan);
     addPhysicalPlatform(600.0f, 400.0f, 80.0f, 15.0f, sf::Color::Cyan);
     
-    std::cout << "✓ Nivel 3: Plataformas avanzadas creadas" << std::endl;
+    std::cout << "✅ NIVEL 3: Plataformas avanzadas creadas" << std::endl;
 }

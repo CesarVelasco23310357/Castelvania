@@ -14,6 +14,14 @@ enum class EnemyType {
     ZOMBIE
 };
 
+// ===================================
+// NUEVO: Estados de animación para enemigos
+// ===================================
+enum class EnemyState {
+    IDLE,      // Parado (frame único)
+    MOVING     // En movimiento (animación)
+};
+
 class CEnemy {
 private:
     // Atributos del enemigo
@@ -26,7 +34,7 @@ private:
     float m_speed;
     
     // ===================================
-    // NUEVO: Sistema de físicas
+    // Sistema de físicas
     // ===================================
     CPhysics* m_physics;              // Referencia al sistema de físicas
     b2Body* m_physicsBody;            // Cuerpo físico del enemigo
@@ -41,7 +49,7 @@ private:
     float m_currentCooldown;
     
     // ===================================
-    // NUEVO: Comportamiento de IA con físicas
+    // Comportamiento de IA con físicas
     // ===================================
     float m_jumpForce;                // Fuerza de salto para esqueletos/zombies
     float m_flyForce;                 // Fuerza de vuelo para murciélagos
@@ -49,13 +57,97 @@ private:
     float m_lastDirectionChange;      // Timer para cambio de dirección
     int m_movementDirection;          // -1 = izquierda, 1 = derecha, 0 = parado
     
-    // Gráficos SFML
+    // Gráficos SFML (fallback)
     sf::RectangleShape m_sprite;
     sf::Color m_color;
     sf::Color m_originalColor;
     
     // ===================================
-    // NUEVO: Configuración de físicas por tipo
+    // NUEVO: Sistema de sprites y animación
+    // ===================================
+    sf::Texture m_enemyTexture;       // Textura del sprite sheet del enemigo
+    sf::Sprite m_enemySprite;          // Sprite renderizable
+    bool m_texturesLoaded;             // Si las texturas están cargadas
+    
+    // Sistema de animación
+    EnemyState m_currentState;         // Estado actual (IDLE o MOVING)
+    int m_currentFrame;                // Frame actual de la animación
+    float m_animationTimer;            // Timer para cambio de frames
+    float m_animationSpeed;            // Velocidad de animación
+    bool m_isMoving;                   // Si el enemigo se está moviendo
+    
+    // ===================================
+    // CONFIGURACIÓN DE SPRITES POR TIPO DE ENEMIGO
+    // Ajusta estos valores según el tamaño real de tus sprites
+    // ===================================
+    
+    // ZOMBIE - zombie.png
+    // Fila 1: 1 frame IDLE, Fila 2: 4 frames MOVING
+struct ZombieSprites {
+    static const int IDLE_START_X = 0;
+    static const int IDLE_START_Y = 0;
+    static const int IDLE_FRAME_COUNT = 1;
+    static const int IDLE_FRAME_WIDTH = 696;
+    static const int IDLE_FRAME_HEIGHT = 158;
+    
+    static const int MOVING_START_X = 0;
+    static const int MOVING_START_Y = 158;
+    static const int MOVING_FRAME_COUNT = 4;
+    static const int MOVING_FRAME_WIDTH = 174;
+    static const int MOVING_FRAME_HEIGHT = 158;
+    
+    // ✨ NUEVO: Factor de escalado
+    static constexpr float SCALE_X = 0.9f;  // 20% del tamaño original (más pequeño)
+    static constexpr float SCALE_Y = 0.9f;  // 20% del tamaño original
+};
+    
+    // SKELETON - skeleton.png  
+    // Fila 1: 1 frame IDLE, Fila 2: 5 frames MOVING
+    struct SkeletonSprites {
+    static const int IDLE_START_X = 40;
+    static const int IDLE_START_Y = 0;
+    static const int IDLE_FRAME_COUNT = 1;
+    static const int IDLE_FRAME_WIDTH = 550;
+    static const int IDLE_FRAME_HEIGHT = 186;
+    
+    static const int MOVING_START_X = 40;
+    static const int MOVING_START_Y = 186;
+    static const int MOVING_FRAME_COUNT = 5;
+    static const int MOVING_FRAME_WIDTH = 130;
+    static const int MOVING_FRAME_HEIGHT = 186;
+    
+    // ✨ NUEVO: Factor de escalado (más pequeño porque está muy grande)
+    static constexpr float SCALE_X = 0.7f;  // 15% del tamaño original
+    static constexpr float SCALE_Y = 0.7f;  // 15% del tamaño original
+};
+    
+    // MURCIELAGO - murcielago.png
+    // Solo 1 fila: 5 frames MOVING (siempre en movimiento)
+struct MurcielagoSprites {
+    static const int IDLE_START_X = 0;
+    static const int IDLE_START_Y = 0;
+    static const int IDLE_FRAME_COUNT = 5;
+    static const int IDLE_FRAME_WIDTH = 106;
+    static const int IDLE_FRAME_HEIGHT = 127;
+    
+    static const int MOVING_START_X = 0;
+    static const int MOVING_START_Y = 0;
+    static const int MOVING_FRAME_COUNT = 5;
+    static const int MOVING_FRAME_WIDTH = 106;
+    static const int MOVING_FRAME_HEIGHT = 127;
+    
+    // ✨ NUEVO: Factor de escalado
+    static constexpr float SCALE_X = 1.0f;  // 30% del tamaño original
+    static constexpr float SCALE_Y = 1.0f;  // 30% del tamaño original
+};
+    
+    // Velocidades de animación (más alto = más lento)
+    static constexpr float ZOMBIE_ANIMATION_SPEED = 0.3f;     // Lento
+    static constexpr float SKELETON_ANIMATION_SPEED = 0.2f;   // Medio
+    static constexpr float MURCIELAGO_ANIMATION_SPEED = 0.15f; // Rápido
+    
+    // ===================================
+    // Configuración de físicas por tipo
     // ===================================
     static constexpr float MURCIELAGO_FLY_FORCE = 8.0f;
     static constexpr float ESQUELETO_JUMP_FORCE = 7.0f;
@@ -83,7 +175,7 @@ public:
     float getAttackRange() const;
     
     // ===================================
-    // NUEVO: Getters para físicas
+    // Getters para físicas
     // ===================================
     bool isGrounded() const;
     bool canFly() const;
@@ -91,13 +183,21 @@ public:
     sf::Vector2f getVelocity() const;
     int getMovementDirection() const;
     
+    // ===================================
+    // NUEVO: Getters para animación
+    // ===================================
+    EnemyState getCurrentState() const;
+    bool isMoving() const;
+    bool hasTextures() const;
+    
     // Setters
     void setPosition(float x, float y);
     void setPosition(const sf::Vector2f& position);
     void setHealth(int health);
+    void setMoving(bool moving);                 // ← NUEVO: Controlar animación
     
     // ===================================
-    // NUEVO: Configuración de físicas
+    // Configuración de físicas
     // ===================================
     void initializePhysics(CPhysics* physics);  // Configurar físicas
     void updatePhysicsPosition();                // Sincronizar posición con físicas
@@ -105,7 +205,7 @@ public:
     
     // Métodos de gameplay
     void moveTowards(const sf::Vector2f& targetPosition, float deltaTime);
-    void moveWithPhysics(const sf::Vector2f& targetPosition, float deltaTime);  // ← NUEVO
+    void moveWithPhysics(const sf::Vector2f& targetPosition, float deltaTime);
     int attack();
     void takeDamage(int damage);
     bool isAlive() const;
@@ -113,7 +213,7 @@ public:
     bool isInRange(const sf::Vector2f& targetPosition, float range) const;
     
     // ===================================
-    // NUEVO: Comportamiento con físicas
+    // Comportamiento con físicas
     // ===================================
     void jump();                                 // Saltar (esqueletos/zombies)
     void fly();                                  // Volar (murciélagos)
@@ -129,7 +229,8 @@ public:
     
     // Debug
     void printStatus() const;
-    void printPhysicsStatus() const;             // ← NUEVO: Debug de físicas
+    void printPhysicsStatus() const;             // Debug de físicas
+    void printSpriteStatus() const;              // ← NUEVO: Debug de sprites
     
 private:
     // Métodos privados para configurar tipos
@@ -138,7 +239,7 @@ private:
     float calculateDistance(const sf::Vector2f& position1, const sf::Vector2f& position2) const;
     
     // ===================================
-    // NUEVO: Métodos de físicas privados
+    // Métodos de físicas privados
     // ===================================
     void setupPhysicsForType();                 // Configurar físicas según tipo
     void checkGroundState();                    // Verificar si está en el suelo
@@ -148,6 +249,16 @@ private:
     void handleMurcieelagoAI(const sf::Vector2f& playerPosition, float deltaTime);  // IA específica para murciélagos
     void handleEsqueletoAI(const sf::Vector2f& playerPosition, float deltaTime);    // IA específica para esqueletos
     void handleZombieAI(const sf::Vector2f& playerPosition, float deltaTime);       // IA específica para zombies
+    
+    // ===================================
+    // NUEVO: Métodos de sprites y animación
+    // ===================================
+    void loadEnemyTextures();                   // Cargar texturas según el tipo
+    void updateAnimation(float deltaTime);      // Actualizar animación
+    void updateSpriteFrame();                   // Actualizar frame del sprite
+    sf::IntRect getCurrentFrameRect() const;    // Obtener rectángulo del frame actual
+    void updateAnimationState();                // Actualizar estado de animación basado en movimiento
+    std::string getTextureFileName() const;     // Obtener nombre del archivo de textura
 };
 
 #endif // CENEMY_HPP

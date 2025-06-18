@@ -6,28 +6,44 @@
 // Constructor
 CEnemy::CEnemy(EnemyType type, float x, float y) 
     : m_enemyType(type), m_position(x, y), m_currentCooldown(0.0f),
-      m_physics(nullptr),           // ← NUEVO: Referencia al sistema de físicas
-      m_physicsBody(nullptr),       // ← NUEVO: Cuerpo físico
-      m_physicsEnabled(false),      // ← NUEVO: Estado de físicas
-      m_isGrounded(false),          // ← NUEVO: Estado en el suelo
-      m_canFly(false),              // ← NUEVO: Capacidad de volar
-      m_jumpForce(0.0f),            // ← NUEVO: Fuerza de salto
-      m_flyForce(0.0f),             // ← NUEVO: Fuerza de vuelo
-      m_movementForce(0.0f),        // ← NUEVO: Fuerza de movimiento
-      m_lastDirectionChange(0.0f),  // ← NUEVO: Timer para cambio de dirección
-      m_movementDirection(1) {      // ← NUEVO: Dirección inicial (derecha)
+      m_physics(nullptr),           // Referencia al sistema de físicas
+      m_physicsBody(nullptr),       // Cuerpo físico
+      m_physicsEnabled(false),      // Estado de físicas
+      m_isGrounded(false),          // Estado en el suelo
+      m_canFly(false),              // Capacidad de volar
+      m_jumpForce(0.0f),            // Fuerza de salto
+      m_flyForce(0.0f),             // Fuerza de vuelo
+      m_movementForce(0.0f),        // Fuerza de movimiento
+      m_lastDirectionChange(0.0f),  // Timer para cambio de dirección
+      m_movementDirection(1),       // Dirección inicial (derecha)
+      // ===================================
+      // NUEVO: Inicialización del sistema de sprites
+      // ===================================
+      m_texturesLoaded(false),      // Estado de texturas
+      m_currentState(EnemyState::IDLE), // Estado inicial
+      m_currentFrame(0),            // Frame inicial
+      m_animationTimer(0.0f),       // Timer de animación
+      m_animationSpeed(0.3f),       // Velocidad por defecto
+      m_isMoving(false) {           // Estado de movimiento
     
     // Configurar el tipo de enemigo
     setupEnemyType(type);
     
-    // Configurar el sprite
+    // Configurar el sprite (fallback)
     m_sprite.setSize(sf::Vector2f(28.0f, 28.0f));
     m_sprite.setFillColor(m_color);
     m_sprite.setPosition(m_position);
     m_originalColor = m_color;
     
+    // ===================================
+    // NUEVO: Cargar texturas del enemigo
+    // ===================================
+    std::cout << "🎨 Cargando sprites para enemigo " << m_type << "..." << std::endl;
+    loadEnemyTextures();
+    
     std::cout << "Enemigo " << m_type << " creado en posición (" 
-              << x << ", " << y << ")" << std::endl;
+              << x << ", " << y << ") con sprites: " 
+              << (m_texturesLoaded ? "CARGADOS" : "FALLBACK") << std::endl;
 }
 
 // Destructor
@@ -66,6 +82,9 @@ float CEnemy::getSpeed() const {
 }
 
 sf::FloatRect CEnemy::getBounds() const {
+    if (m_texturesLoaded) {
+        return m_enemySprite.getGlobalBounds();
+    }
     return m_sprite.getGlobalBounds();
 }
 
@@ -78,7 +97,7 @@ float CEnemy::getAttackRange() const {
 }
 
 // ===================================
-// NUEVO: Getters para físicas
+// Getters para físicas
 // ===================================
 bool CEnemy::isGrounded() const {
     return m_isGrounded;
@@ -105,16 +124,42 @@ int CEnemy::getMovementDirection() const {
     return m_movementDirection;
 }
 
+// ===================================
+// NUEVO: Getters para animación
+// ===================================
+EnemyState CEnemy::getCurrentState() const {
+    return m_currentState;
+}
+
+bool CEnemy::isMoving() const {
+    return m_isMoving;
+}
+
+bool CEnemy::hasTextures() const {
+    return m_texturesLoaded;
+}
+
 // SETTERS
 void CEnemy::setPosition(float x, float y) {
     m_position.x = x;
     m_position.y = y;
     m_sprite.setPosition(m_position);
+    
+    // ===================================
+    // NUEVO: Actualizar también el sprite con textura
+    // ===================================
+    if (m_texturesLoaded) {
+        m_enemySprite.setPosition(m_position);
+    }
 }
 
 void CEnemy::setPosition(const sf::Vector2f& position) {
     m_position = position;
     m_sprite.setPosition(m_position);
+    
+    if (m_texturesLoaded) {
+        m_enemySprite.setPosition(m_position);
+    }
 }
 
 void CEnemy::setHealth(int health) {
@@ -127,7 +172,17 @@ void CEnemy::setHealth(int health) {
 }
 
 // ===================================
-// NUEVO: Inicializar físicas del enemigo
+// NUEVO: Setter para controlar animación
+// ===================================
+void CEnemy::setMoving(bool moving) {
+    if (m_isMoving != moving) {
+        m_isMoving = moving;
+        updateAnimationState();
+    }
+}
+
+// ===================================
+// Inicializar físicas del enemigo
 // ===================================
 void CEnemy::initializePhysics(CPhysics* physics) {
     if (!physics) {
@@ -159,7 +214,7 @@ void CEnemy::initializePhysics(CPhysics* physics) {
 }
 
 // ===================================
-// NUEVO: Configurar físicas según el tipo
+// Configurar físicas según el tipo
 // ===================================
 void CEnemy::setupPhysicsForType() {
     if (!m_physicsEnabled || !m_physicsBody) return;
@@ -169,7 +224,6 @@ void CEnemy::setupPhysicsForType() {
             m_canFly = true;
             m_flyForce = MURCIELAGO_FLY_FORCE;
             m_movementForce = DEFAULT_MOVEMENT_FORCE;
-            // Los murciélagos tienen menor gravedad
             std::cout << "🦇 Murciélago configurado para volar" << std::endl;
             break;
             
@@ -196,7 +250,7 @@ void CEnemy::setupPhysicsForType() {
 }
 
 // ===================================
-// NUEVO: Sincronizar posición desde físicas
+// Sincronizar posición desde físicas
 // ===================================
 void CEnemy::syncPositionFromPhysics() {
     if (!m_physicsEnabled || !m_physicsBody) return;
@@ -209,12 +263,19 @@ void CEnemy::syncPositionFromPhysics() {
     m_position = newPos;
     m_sprite.setPosition(m_position);
     
+    // ===================================
+    // NUEVO: Actualizar también el sprite con textura
+    // ===================================
+    if (m_texturesLoaded) {
+        m_enemySprite.setPosition(m_position);
+    }
+    
     // Actualizar estados basados en físicas
     updatePhysicsState();
 }
 
 // ===================================
-// NUEVO: Actualizar posición en físicas
+// Actualizar posición en físicas
 // ===================================
 void CEnemy::updatePhysicsPosition() {
     if (!m_physicsEnabled || !m_physicsBody) return;
@@ -235,56 +296,61 @@ void CEnemy::moveTowards(const sf::Vector2f& targetPosition, float deltaTime) {
     }
     
     // Movimiento tradicional (fallback)
-    // Calcular dirección hacia el objetivo
     sf::Vector2f direction = targetPosition - m_position;
     float distance = calculateDistance(m_position, targetPosition);
     
-    // Si está muy cerca, no moverse más
     if (distance <= m_attackRange) {
+        setMoving(false);  // ← NUEVO: Parar animación
         return;
     }
     
-    // Normalizar la dirección y aplicar velocidad
     if (distance > 0) {
         direction.x /= distance;
         direction.y /= distance;
         
-        // Mover hacia el objetivo
         sf::Vector2f movement = direction * m_speed * deltaTime;
         m_position += movement;
         m_sprite.setPosition(m_position);
+        
+        // ===================================
+        // NUEVO: Actualizar sprite con textura y activar animación
+        // ===================================
+        if (m_texturesLoaded) {
+            m_enemySprite.setPosition(m_position);
+        }
+        setMoving(true);  // ← NUEVO: Activar animación de movimiento
     }
 }
 
 // ===================================
-// NUEVO: Movimiento con físicas
+// Movimiento con físicas
 // ===================================
 void CEnemy::moveWithPhysics(const sf::Vector2f& targetPosition, float deltaTime) {
     if (!m_physicsEnabled || !m_physicsBody || !isAlive()) return;
     
     float distance = calculateDistance(m_position, targetPosition);
     
-    // Si está muy cerca, no moverse más
     if (distance <= m_attackRange) {
+        setMoving(false);  // ← NUEVO: Parar animación
         return;
     }
     
-    // Calcular dirección hacia el objetivo
     sf::Vector2f direction = targetPosition - m_position;
     float moveDirection = 0.0f;
     
-    if (std::abs(direction.x) > 10.0f) { // Umbral mínimo para movimiento
+    if (std::abs(direction.x) > 10.0f) {
         moveDirection = (direction.x > 0) ? 1.0f : -1.0f;
+        setMoving(true);  // ← NUEVO: Activar animación
+    } else {
+        setMoving(false); // ← NUEVO: Parar animación
     }
     
     // Aplicar movimiento según el tipo
     if (m_canFly && m_enemyType == EnemyType::MURCIELAGO) {
         handleMurcieelagoAI(targetPosition, deltaTime);
     } else {
-        // Movimiento terrestre
         applyMovementForce(moveDirection);
         
-        // Los esqueletos pueden saltar hacia el objetivo
         if (m_enemyType == EnemyType::ESQUELETO && m_isGrounded && std::abs(direction.y) > 50.0f) {
             jump();
         }
@@ -311,11 +377,11 @@ void CEnemy::takeDamage(int damage) {
         std::cout << m_type << " recibe " << damage << " de daño. Salud: " 
                   << m_health << "/" << m_maxHealth << "\n";
         
-        // Efecto visual al recibir daño
         if (m_health > 0) {
             m_sprite.setFillColor(sf::Color::Red);
         } else {
             m_sprite.setFillColor(sf::Color::Black);
+            setMoving(false);  // ← NUEVO: Parar animación al morir
             std::cout << m_type << " ha muerto!\n";
         }
     }
@@ -334,14 +400,13 @@ bool CEnemy::isInRange(const sf::Vector2f& targetPosition, float range) const {
 }
 
 // ===================================
-// NUEVO: Saltar (esqueletos principalmente)
+// Saltar (esqueletos principalmente)
 // ===================================
 void CEnemy::jump() {
     if (!m_physicsEnabled || !m_physicsBody || !m_isGrounded || m_jumpForce <= 0.0f) {
         return;
     }
     
-    // Aplicar impulso hacia arriba
     m_physics->applyImpulse(this, 0.0f, -m_jumpForce);
     m_isGrounded = false;
     
@@ -349,34 +414,33 @@ void CEnemy::jump() {
 }
 
 // ===================================
-// NUEVO: Volar (murciélagos)
+// Volar (murciélagos)
 // ===================================
 void CEnemy::fly() {
     if (!m_physicsEnabled || !m_physicsBody || !m_canFly) return;
     
-    // Aplicar fuerza hacia arriba para contrarrestar la gravedad
     m_physics->applyForce(this, 0.0f, -m_flyForce);
 }
 
 // ===================================
-// NUEVO: Patrullar automáticamente
+// Patrullar automáticamente
 // ===================================
 void CEnemy::patrol() {
     if (!m_physicsEnabled || !m_physicsBody) return;
     
-    // Aplicar movimiento en la dirección actual
     applyMovementForce(static_cast<float>(m_movementDirection) * 0.5f);
+    setMoving(true);  // ← NUEVO: Activar animación durante patrullaje
 }
 
 // ===================================
-// NUEVO: Seguir objetivo con físicas
+// Seguir objetivo con físicas
 // ===================================
 void CEnemy::followTarget(const sf::Vector2f& target, float deltaTime) {
     moveWithPhysics(target, deltaTime);
 }
 
 // ===================================
-// NUEVO: IA específica para murciélagos (vuelan)
+// IA específica para murciélagos (vuelan)
 // ===================================
 void CEnemy::handleMurcieelagoAI(const sf::Vector2f& playerPosition, float deltaTime) {
     if (!m_physicsEnabled || !m_physicsBody) return;
@@ -385,14 +449,12 @@ void CEnemy::handleMurcieelagoAI(const sf::Vector2f& playerPosition, float delta
     float distance = calculateDistance(m_position, playerPosition);
     
     if (distance <= m_detectionRange && distance > m_attackRange) {
-        // Volar hacia el jugador
         float forceX = (direction.x > 0) ? m_movementForce : -m_movementForce;
         float forceY = (direction.y > 0) ? m_flyForce : -m_flyForce;
         
-        // Aplicar fuerza de vuelo
         m_physics->applyForce(this, forceX * 0.5f, forceY * 0.3f);
+        setMoving(true);  // ← NUEVO: Activar animación
         
-        // Limitar velocidad máxima
         b2Vec2 velocity = m_physicsBody->GetLinearVelocity();
         if (velocity.Length() > 8.0f) {
             velocity.Normalize();
@@ -403,7 +465,7 @@ void CEnemy::handleMurcieelagoAI(const sf::Vector2f& playerPosition, float delta
 }
 
 // ===================================
-// NUEVO: IA específica para esqueletos
+// IA específica para esqueletos
 // ===================================
 void CEnemy::handleEsqueletoAI(const sf::Vector2f& playerPosition, float deltaTime) {
     if (!m_physicsEnabled || !m_physicsBody) return;
@@ -412,22 +474,22 @@ void CEnemy::handleEsqueletoAI(const sf::Vector2f& playerPosition, float deltaTi
     float distance = calculateDistance(m_position, playerPosition);
     
     if (distance <= m_detectionRange && distance > m_attackRange) {
-        // Movimiento horizontal hacia el jugador
         float moveDirection = (direction.x > 0) ? 1.0f : -1.0f;
         applyMovementForce(moveDirection);
+        setMoving(true);  // ← NUEVO: Activar animación
         
-        // Saltar si hay obstáculos o si el jugador está más alto
         if (m_isGrounded && (direction.y < -30.0f || std::abs(direction.x) < 50.0f)) {
             jump();
         }
     } else if (distance > m_detectionRange) {
-        // Patrullar cuando no detecta al jugador
         patrol();
+    } else {
+        setMoving(false);  // ← NUEVO: Parar animación
     }
 }
 
 // ===================================
-// NUEVO: IA específica para zombies
+// IA específica para zombies
 // ===================================
 void CEnemy::handleZombieAI(const sf::Vector2f& playerPosition, float deltaTime) {
     if (!m_physicsEnabled || !m_physicsBody) return;
@@ -436,25 +498,23 @@ void CEnemy::handleZombieAI(const sf::Vector2f& playerPosition, float deltaTime)
     float distance = calculateDistance(m_position, playerPosition);
     
     if (distance <= m_detectionRange && distance > m_attackRange) {
-        // Movimiento lento hacia el jugador
         float moveDirection = (direction.x > 0) ? 1.0f : -1.0f;
-        applyMovementForce(moveDirection * 0.7f); // Movimiento más lento
+        applyMovementForce(moveDirection * 0.7f);
+        setMoving(true);  // ← NUEVO: Activar animación
     } else if (distance > m_detectionRange) {
-        // Patrullar lentamente
         patrol();
+    } else {
+        setMoving(false);  // ← NUEVO: Parar animación
     }
 }
 
 // ===================================
-// NUEVO: Aplicar fuerza de movimiento
+// Aplicar fuerza de movimiento
 // ===================================
 void CEnemy::applyMovementForce(float direction) {
     if (!m_physicsEnabled || !m_physicsBody || direction == 0.0f) return;
     
-    // Obtener velocidad actual
     b2Vec2 velocity = m_physicsBody->GetLinearVelocity();
-    
-    // Limitar velocidad horizontal máxima según el tipo
     float maxVelocity = (m_enemyType == EnemyType::ZOMBIE) ? 2.0f : 4.0f;
     
     if (std::abs(velocity.x) < maxVelocity) {
@@ -464,23 +524,20 @@ void CEnemy::applyMovementForce(float direction) {
 }
 
 // ===================================
-// NUEVO: Verificar estado en el suelo
+// Verificar estado en el suelo
 // ===================================
 void CEnemy::checkGroundState() {
     if (!m_physicsEnabled || !m_physicsBody) {
-        m_isGrounded = true; // Asumir que está en el suelo sin físicas
+        m_isGrounded = true;
         return;
     }
     
-    // Verificar velocidad vertical
     b2Vec2 velocity = m_physicsBody->GetLinearVelocity();
-    
-    // Está en el suelo si la velocidad vertical es muy pequeña
     m_isGrounded = std::abs(velocity.y) < 0.5f;
 }
 
 // ===================================
-// NUEVO: Actualizar estado basado en físicas
+// Actualizar estado basado en físicas
 // ===================================
 void CEnemy::updatePhysicsState() {
     if (!m_physicsEnabled) return;
@@ -489,14 +546,13 @@ void CEnemy::updatePhysicsState() {
 }
 
 // ===================================
-// NUEVO: Actualizar dirección de movimiento
+// Actualizar dirección de movimiento
 // ===================================
 void CEnemy::updateMovementDirection(float deltaTime) {
     m_lastDirectionChange += deltaTime;
     
-    // Cambiar dirección cada cierto tiempo
     if (m_lastDirectionChange >= DIRECTION_CHANGE_TIME) {
-        m_movementDirection = (rand() % 3) - 1; // -1, 0, o 1
+        m_movementDirection = (rand() % 3) - 1;
         m_lastDirectionChange = 0.0f;
     }
 }
@@ -507,16 +563,13 @@ void CEnemy::updateAI(const sf::Vector2f& playerPosition, float deltaTime) {
     
     float distanceToPlayer = calculateDistance(m_position, playerPosition);
     
-    // Actualizar dirección de patrullaje
     updateMovementDirection(deltaTime);
     
-    // Si el jugador está en rango de detección
     if (distanceToPlayer <= m_detectionRange) {
-        // Si está en rango de ataque, atacar
         if (distanceToPlayer <= m_attackRange && canAttack()) {
             attack();
+            setMoving(false);  // ← NUEVO: Parar animación al atacar
         } else {
-            // Moverse hacia el jugador según el tipo
             if (m_physicsEnabled) {
                 switch (m_enemyType) {
                     case EnemyType::MURCIELAGO:
@@ -530,31 +583,35 @@ void CEnemy::updateAI(const sf::Vector2f& playerPosition, float deltaTime) {
                         break;
                 }
             } else {
-                // Fallback al movimiento tradicional
                 moveTowards(playerPosition, deltaTime);
             }
         }
     } else {
-        // Patrullar cuando no detecta al jugador
         if (m_physicsEnabled) {
             patrol();
+        } else {
+            setMoving(false);  // ← NUEVO: Parar animación cuando no patrulla
         }
     }
 }
 
 // MÉTODOS SFML
 void CEnemy::update(float deltaTime) {
-    // Actualizar cooldown de ataque
     if (m_currentCooldown > 0.0f) {
         m_currentCooldown -= deltaTime;
     }
     
-    // *** NUEVO: Actualizar estado físico ***
     if (m_physicsEnabled) {
         updatePhysicsState();
     }
     
-    // Restaurar color original después de recibir daño
+    // ===================================
+    // NUEVO: Actualizar animación
+    // ===================================
+    if (m_texturesLoaded) {
+        updateAnimation(deltaTime);
+    }
+    
     if (isAlive() && m_sprite.getFillColor() == sf::Color::Red) {
         m_sprite.setFillColor(m_originalColor);
     }
@@ -562,7 +619,15 @@ void CEnemy::update(float deltaTime) {
 
 void CEnemy::render(sf::RenderWindow& window) {
     if (isAlive()) {
-        window.draw(m_sprite);
+        if (m_texturesLoaded) {
+            // ===================================
+            // NUEVO: Renderizar con textura y animación
+            // ===================================
+            window.draw(m_enemySprite);
+        } else {
+            // Fallback: renderizar rectángulo de color
+            window.draw(m_sprite);
+        }
     }
 }
 
@@ -577,12 +642,12 @@ void CEnemy::printStatus() const {
     std::cout << "Rango detección: " << m_detectionRange << "\n";
     std::cout << "Rango ataque: " << m_attackRange << "\n";
     std::cout << "Estado: " << (isAlive() ? "Vivo" : "Muerto") << "\n";
+    std::cout << "Texturas: " << (m_texturesLoaded ? "Cargadas" : "No cargadas") << "\n";
+    std::cout << "Animación: " << (m_currentState == EnemyState::IDLE ? "IDLE" : "MOVING") << "\n";
+    std::cout << "Frame actual: " << m_currentFrame << "\n";
     std::cout << "========================\n";
 }
 
-// ===================================
-// NUEVO: Debug de físicas
-// ===================================
 void CEnemy::printPhysicsStatus() const {
     std::cout << "=== FÍSICAS DEL ENEMIGO " << m_type << " ===" << std::endl;
     std::cout << "Físicas habilitadas: " << (m_physicsEnabled ? "SÍ" : "NO") << std::endl;
@@ -604,6 +669,27 @@ void CEnemy::printPhysicsStatus() const {
     std::cout << "============================" << std::endl;
 }
 
+// ===================================
+// NUEVO: Debug de sprites
+// ===================================
+void CEnemy::printSpriteStatus() const {
+    std::cout << "=== SPRITES DEL ENEMIGO " << m_type << " ===" << std::endl;
+    std::cout << "Texturas cargadas: " << (m_texturesLoaded ? "SÍ" : "NO") << std::endl;
+    std::cout << "Estado actual: " << (m_currentState == EnemyState::IDLE ? "IDLE" : "MOVING") << std::endl;
+    std::cout << "Frame actual: " << m_currentFrame << std::endl;
+    std::cout << "En movimiento: " << (m_isMoving ? "SÍ" : "NO") << std::endl;
+    std::cout << "Velocidad animación: " << m_animationSpeed << std::endl;
+    
+    if (m_texturesLoaded) {
+        sf::IntRect rect = getCurrentFrameRect();
+        std::cout << "Rectángulo actual: (" << rect.left << "," << rect.top 
+                  << ") " << rect.width << "x" << rect.height << std::endl;
+        std::cout << "Archivo de textura: " << getTextureFileName() << std::endl;
+    }
+    
+    std::cout << "===============================" << std::endl;
+}
+
 // MÉTODOS PRIVADOS
 void CEnemy::setupEnemyType(EnemyType type) {
     m_type = enemyTypeToString(type);
@@ -618,6 +704,7 @@ void CEnemy::setupEnemyType(EnemyType type) {
             m_attackRange = 35.0f;
             m_attackCooldown = 1.0f;
             m_color = sf::Color::Magenta;
+            m_animationSpeed = MURCIELAGO_ANIMATION_SPEED;
             break;
             
         case EnemyType::ESQUELETO:
@@ -629,6 +716,7 @@ void CEnemy::setupEnemyType(EnemyType type) {
             m_attackRange = 40.0f;
             m_attackCooldown = 1.5f;
             m_color = sf::Color::White;
+            m_animationSpeed = SKELETON_ANIMATION_SPEED;
             break;
             
         case EnemyType::ZOMBIE:
@@ -640,10 +728,10 @@ void CEnemy::setupEnemyType(EnemyType type) {
             m_attackRange = 45.0f;
             m_attackCooldown = 2.0f;
             m_color = sf::Color::Green;
+            m_animationSpeed = ZOMBIE_ANIMATION_SPEED;
             break;
             
         default:
-            // Valores por defecto
             m_health = 50;
             m_maxHealth = 50;
             m_damage = 15;
@@ -652,6 +740,7 @@ void CEnemy::setupEnemyType(EnemyType type) {
             m_attackRange = 40.0f;
             m_attackCooldown = 1.5f;
             m_color = sf::Color::Red;
+            m_animationSpeed = 0.3f;
             break;
     }
 }
@@ -669,4 +758,185 @@ float CEnemy::calculateDistance(const sf::Vector2f& position1, const sf::Vector2
     float dx = position2.x - position1.x;
     float dy = position2.y - position1.y;
     return std::sqrt(dx * dx + dy * dy);
+}
+
+// ===================================
+// NUEVO: Métodos de sprites y animación
+// ===================================
+
+void CEnemy::loadEnemyTextures() {
+    std::cout << "🎨 Cargando texturas para " << m_type << "..." << std::endl;
+    
+    std::string textureFile = getTextureFileName();
+    std::string fullPath = "assets/" + textureFile;
+    
+    std::cout << "Intentando cargar: " << fullPath << std::endl;
+    
+    if (!m_enemyTexture.loadFromFile(fullPath)) {
+        std::cerr << "❌ Error: No se pudo cargar " << fullPath << std::endl;
+        std::cerr << "   Usando fallback (rectángulo de color)" << std::endl;
+        m_texturesLoaded = false;
+        return;
+    }
+    
+    sf::Vector2u textureSize = m_enemyTexture.getSize();
+    std::cout << "✅ " << textureFile << " cargado (" << textureSize.x << "x" << textureSize.y << ")" << std::endl;
+    
+    // Configurar sprite inicial
+    m_texturesLoaded = true;
+    m_enemySprite.setTexture(m_enemyTexture);
+    m_enemySprite.setPosition(m_position);
+    
+    // ✨ NUEVO: Aplicar escalado según el tipo de enemigo
+    switch (m_enemyType) {
+        case EnemyType::ZOMBIE:
+            m_enemySprite.setScale(ZombieSprites::SCALE_X, ZombieSprites::SCALE_Y);
+            std::cout << "   🧟 ZOMBIE escalado a: " << ZombieSprites::SCALE_X << "x" << ZombieSprites::SCALE_Y << std::endl;
+            break;
+            
+        case EnemyType::ESQUELETO:
+            m_enemySprite.setScale(SkeletonSprites::SCALE_X, SkeletonSprites::SCALE_Y);
+            std::cout << "   💀 SKELETON escalado a: " << SkeletonSprites::SCALE_X << "x" << SkeletonSprites::SCALE_Y << std::endl;
+            break;
+            
+        case EnemyType::MURCIELAGO:
+            m_enemySprite.setScale(MurcielagoSprites::SCALE_X, MurcielagoSprites::SCALE_Y);
+            std::cout << "   🦇 MURCIELAGO escalado a: " << MurcielagoSprites::SCALE_X << "x" << MurcielagoSprites::SCALE_Y << std::endl;
+            break;
+    }
+    
+    // Configurar frame inicial (IDLE)
+    updateSpriteFrame();
+    
+    // Imprimir configuración del sprite
+    switch (m_enemyType) {
+        case EnemyType::ZOMBIE:
+            std::cout << "   🧟 ZOMBIE - IDLE: 1 frame, MOVING: 4 frames" << std::endl;
+            break;
+        case EnemyType::ESQUELETO:
+            std::cout << "   💀 SKELETON - IDLE: 1 frame, MOVING: 5 frames" << std::endl;
+            break;
+        case EnemyType::MURCIELAGO:
+            std::cout << "   🦇 MURCIELAGO - Siempre animado: 5 frames" << std::endl;
+            break;
+    }
+    
+    std::cout << "✅ Sistema de sprites de " << m_type << " inicializado" << std::endl;
+}
+
+void CEnemy::updateAnimation(float deltaTime) {
+    if (!m_texturesLoaded) return;
+    
+    m_animationTimer += deltaTime;
+    
+    // Determinar el número de frames según el estado actual
+    int frameCount = 1;
+    
+    switch (m_enemyType) {
+        case EnemyType::ZOMBIE:
+            frameCount = (m_currentState == EnemyState::IDLE) ? ZombieSprites::IDLE_FRAME_COUNT : ZombieSprites::MOVING_FRAME_COUNT;
+            break;
+        case EnemyType::ESQUELETO:
+            frameCount = (m_currentState == EnemyState::IDLE) ? SkeletonSprites::IDLE_FRAME_COUNT : SkeletonSprites::MOVING_FRAME_COUNT;
+            break;
+        case EnemyType::MURCIELAGO:
+            frameCount = MurcielagoSprites::MOVING_FRAME_COUNT;
+            break;
+    }
+    
+    // Actualizar frame si es necesario
+    if (m_animationTimer >= m_animationSpeed) {
+        m_animationTimer = 0.0f;
+        
+        if (frameCount > 1) {
+            m_currentFrame = (m_currentFrame + 1) % frameCount;
+        } else {
+            m_currentFrame = 0;
+        }
+        
+        updateSpriteFrame();
+    }
+}
+
+void CEnemy::updateSpriteFrame() {
+    if (!m_texturesLoaded) return;
+    
+    sf::IntRect frameRect = getCurrentFrameRect();
+    m_enemySprite.setTextureRect(frameRect);
+}
+
+sf::IntRect CEnemy::getCurrentFrameRect() const {
+    int startX = 0, startY = 0;
+    int frameWidth = 32, frameHeight = 32;
+    
+    switch (m_enemyType) {
+        case EnemyType::ZOMBIE:
+            if (m_currentState == EnemyState::IDLE) {
+                startX = ZombieSprites::IDLE_START_X;
+                startY = ZombieSprites::IDLE_START_Y;
+                frameWidth = ZombieSprites::IDLE_FRAME_WIDTH;
+                frameHeight = ZombieSprites::IDLE_FRAME_HEIGHT;
+            } else {
+                startX = ZombieSprites::MOVING_START_X;
+                startY = ZombieSprites::MOVING_START_Y;
+                frameWidth = ZombieSprites::MOVING_FRAME_WIDTH;
+                frameHeight = ZombieSprites::MOVING_FRAME_HEIGHT;
+            }
+            break;
+            
+        case EnemyType::ESQUELETO:
+            if (m_currentState == EnemyState::IDLE) {
+                startX = SkeletonSprites::IDLE_START_X;
+                startY = SkeletonSprites::IDLE_START_Y;
+                frameWidth = SkeletonSprites::IDLE_FRAME_WIDTH;
+                frameHeight = SkeletonSprites::IDLE_FRAME_HEIGHT;
+            } else {
+                startX = SkeletonSprites::MOVING_START_X;
+                startY = SkeletonSprites::MOVING_START_Y;
+                frameWidth = SkeletonSprites::MOVING_FRAME_WIDTH;
+                frameHeight = SkeletonSprites::MOVING_FRAME_HEIGHT;
+            }
+            break;
+            
+        case EnemyType::MURCIELAGO:
+            startX = MurcielagoSprites::MOVING_START_X;
+            startY = MurcielagoSprites::MOVING_START_Y;
+            frameWidth = MurcielagoSprites::MOVING_FRAME_WIDTH;
+            frameHeight = MurcielagoSprites::MOVING_FRAME_HEIGHT;
+            break;
+    }
+    
+    int x = startX + (m_currentFrame * frameWidth);
+    int y = startY;
+    
+    return sf::IntRect(x, y, frameWidth, frameHeight);
+}
+
+void CEnemy::updateAnimationState() {
+    if (m_enemyType == EnemyType::MURCIELAGO) {
+        m_currentState = EnemyState::MOVING;
+    } else {
+        if (m_isMoving) {
+            if (m_currentState != EnemyState::MOVING) {
+                m_currentState = EnemyState::MOVING;
+                m_currentFrame = 0;
+                m_animationTimer = 0.0f;
+            }
+        } else {
+            if (m_currentState != EnemyState::IDLE) {
+                m_currentState = EnemyState::IDLE;
+                m_currentFrame = 0;
+                m_animationTimer = 0.0f;
+            }
+        }
+    }
+}
+
+std::string CEnemy::getTextureFileName() const {
+    switch (m_enemyType) {
+        case EnemyType::ZOMBIE: return "zombie.png";
+        case EnemyType::ESQUELETO: return "skeleton.png";
+        case EnemyType::MURCIELAGO: return "murcielago.png";
+        default: return "unknown.png";
+    }
 }

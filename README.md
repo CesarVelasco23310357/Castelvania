@@ -187,39 +187,6 @@ Estados disponibles:
 - **RAII**: Recursos liberados automáticamente
 - **Minimal copying**: Referencias y movimientos para eficiencia
 
-## 🐛 Debugging
-
-El juego incluye un sistema robusto de debugging:
-
-```cpp
-// Información de físicas
-player.printPhysicsStatus();
-
-// Estado completo del juego  
-game.debugFullPhysicsState();
-
-// Información de enemigos
-enemy.printStatus();
-```
-
-## 🔮 Futuras Mejoras
-
-- [ ] **Sistema de audio** con SFML Audio
-- [ ] **Más niveles** con mecánicas únicas
-- [ ] **Power-ups** y mejoras del jugador
-- [ ] **Jefes finales** con IA compleja
-- [ ] **Modo multijugador** local
-- [ ] **Editor de niveles** integrado
-
-## 🤝 Contribuciones
-
-¡Las contribuciones son bienvenidas! Por favor:
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
 
 ## 📄 Licencia
 

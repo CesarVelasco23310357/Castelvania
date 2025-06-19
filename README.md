@@ -73,15 +73,6 @@ Castelvania es un juego de plataformas desarrollado en C++ que combina acción, 
 | **-** (Guión) | Bajar volumen (-10%) |
 | **F9** | Mostrar información de debug de música |
 
-### Controles de Debug 🔧
-| Tecla | Acción |
-|-------|--------|
-| **P** | Debug completo de físicas |
-| **I** | Debug de posiciones |
-| **F1-F8** | Debug de plataformas |
-| **T** | Información de plataformas |
-| **Y** | Reposicionar jugador |
-
 ## 🏗️ Compilación
 
 ### Requisitos

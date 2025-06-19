@@ -1,4 +1,3 @@
-# Castelvania
 # 🏰 CASTELVANIA
 *Un juego de plataformas 2D inspirado en el clásico Castlevania*
 
@@ -6,7 +5,7 @@
 
 ## 📖 Descripción
 
-Castelvania es un juego de plataformas desarrollado en C++ que combina acción, aventura y combate en un castillo lleno de criaturas sobrenaturales. El jugador debe atravesar tres niveles cada vez más desafiantes, enfrentándose a murciélagos, esqueletos y zombies con un sistema de física realista.
+Castelvania es un juego de plataformas desarrollado en C++ que combina acción, aventura y combate en un castillo lleno de criaturas sobrenaturales. El jugador debe atravesar tres niveles cada vez más desafiantes, enfrentándose a murciélagos, esqueletos y zombies con un sistema de física realista y una banda sonora inmersiva.
 
 ## 🎮 Screenshots del Juego
 
@@ -29,6 +28,13 @@ Castelvania es un juego de plataformas desarrollado en C++ que combina acción, 
 - Sistema de salud para jugador y enemigos
 - Efectos visuales de daño y estados hurt
 
+### 🎵 **Sistema de Audio Inmersivo**
+- **Música adaptativa**: Diferentes temas para menú y gameplay
+- **Transiciones suaves**: Fade in/out entre pistas musicales
+- **Control de volumen**: Ajuste dinámico de volumen maestro y de música
+- **Sistema de silencio**: Toggle rápido para silenciar/desilenciar
+- **Audio debug**: Información en tiempo real del estado del audio
+
 ### 🤖 **IA para enemigos**
 - **Murciélagos**: IA de vuelo que persigue al jugador en 3D
 - **Esqueletos**: Saltan obstáculos y persiguen agresivamente  
@@ -47,9 +53,9 @@ Castelvania es un juego de plataformas desarrollado en C++ que combina acción, 
 - Transiciones fluidas entre animaciones
 - Diferentes velocidades de animación por personaje
 
-
 ## 🎮 Controles
 
+### Movimiento y Combate
 | Tecla | Acción |
 |-------|--------|
 | **A** | Mover izquierda |
@@ -59,6 +65,22 @@ Castelvania es un juego de plataformas desarrollado en C++ que combina acción, 
 | **ESC** | Pausar/Menú |
 | **R** | Reiniciar nivel |
 
+### Controles de Audio 🎵
+| Tecla | Acción |
+|-------|--------|
+| **M** | Silenciar/Desilenciar audio |
+| **+** (Igual) | Subir volumen (+10%) |
+| **-** (Guión) | Bajar volumen (-10%) |
+| **F9** | Mostrar información de debug de música |
+
+### Controles de Debug 🔧
+| Tecla | Acción |
+|-------|--------|
+| **P** | Debug completo de físicas |
+| **I** | Debug de posiciones |
+| **F1-F8** | Debug de plataformas |
+| **T** | Información de plataformas |
+| **Y** | Reposicionar jugador |
 
 ## 🏗️ Compilación
 
@@ -68,6 +90,12 @@ Castelvania es un juego de plataformas desarrollado en C++ que combina acción, 
 - **Box2D** - Para físicas
 - **CMake** (opcional)
 
+### Archivos de Audio Necesarios
+```
+assets/
+├── MenuFondo.ogg      # Música del menú principal
+└── GameplaySound.ogg  # Música durante el gameplay
+```
 
 ## 🚀 Ejecución
 
@@ -75,7 +103,7 @@ Castelvania es un juego de plataformas desarrollado en C++ que combina acción, 
 make run
 ```
 
-**Nota**: Asegúrate de que la carpeta `assets/` esté en el mismo directorio que el ejecutable.
+**Nota**: Asegúrate de que la carpeta `assets/` con todos los recursos (gráficos y audio) esté en el mismo directorio que el ejecutable.
 
 ## 🎯 Mecánicas del Juego
 
@@ -123,8 +151,19 @@ CASTELVANIA/
 │   ├── CPlayer.*         # Clase del jugador
 │   ├── CEnemy.*          # Sistema de enemigos con IA
 │   ├── CLevel.*          # Gestión de niveles
-│   └── CPhysics.*        # Motor de físicas Box2D
-├── assets/               # Recursos gráficos
+│   ├── CPhysics.*        # Motor de físicas Box2D
+│   └── CMusica.*         # Sistema de audio y música
+├── assets/               # Recursos gráficos y audio
+│   ├── Character.png     # Sprites del jugador
+│   ├── murcielago.png    # Sprites de murciélago
+│   ├── skeleton.png      # Sprites de esqueleto
+│   ├── zombie.png        # Sprites de zombie
+│   ├── floor.png         # Textura de plataformas
+│   ├── layer_1.png       # Fondo lejano
+│   ├── layer_2.png       # Fondo cercano
+│   ├── title_screen.png  # Pantalla de título
+│   ├── MenuFondo.ogg     # Música del menú
+│   └── GameplaySound.ogg # Música del gameplay
 └── README.md
 ```
 
@@ -132,7 +171,7 @@ CASTELVANIA/
 
 #### `CGame`
 - **Responsabilidad**: Loop principal, estados del juego, gestión de niveles
-- **Características**: Manejo de eventos, renderizado, física global
+- **Características**: Manejo de eventos, renderizado, física global, integración de audio
 - **Estados**: Menu, Playing, Paused, Game Over, Victory
 
 #### `CPlayer`  
@@ -153,6 +192,18 @@ CASTELVANIA/
 - **Responsabilidad**: Integración con Box2D, colisiones, físicas realistas
 - **Características**: Gravedad configurable, categorías de colisión, contactos
 
+#### `CMusica` 🎵
+- **Responsabilidad**: Gestión completa del sistema de audio
+- **Características**: 
+  - Reproducción de música de fondo
+  - Transiciones suaves entre pistas
+  - Control de volumen maestro y de música
+  - Sistema de fade in/out
+  - Estados de audio: Playing, Stopped, Paused, Transitioning
+  - Debug de información de audio en tiempo real
+- **Formatos soportados**: OGG Vorbis (recomendado), WAV
+- **Integración**: Cambios automáticos de música según el estado del juego
+
 ## 🎨 Sistema de Sprites
 
 ### Jugador (Character.png)
@@ -170,12 +221,36 @@ Estados disponibles:
 - **skeleton.png**: Idle + 5 frames de movimiento  
 - **zombie.png**: Idle + 4 frames de movimiento
 
+## 🎵 Sistema de Audio
+
+### Arquitectura de Audio
+- **Motor**: SFML Audio
+- **Formatos**: OGG Vorbis, WAV
+- **Canales**: Música de fondo (estéreo)
+- **Streaming**: Carga bajo demanda para archivos grandes
+
+### Características del Audio
+- **Música adaptativa**: Cambia automáticamente según el contexto del juego
+- **Volumen configurable**: Control independiente de volumen maestro y música
+- **Transiciones suaves**: Fade in/out entre diferentes pistas
+- **Memoria eficiente**: Streaming de archivos de audio grandes
+- **Sistema de bucle**: Reproducción continua de música de fondo
+
+### Estados de Música
+| Estado | Descripción |
+|--------|-------------|
+| **Menu** | Música ambiental para el menú principal |
+| **Gameplay** | Música de acción durante los niveles |
+| **Transition** | Transiciones suaves entre estados |
+| **Paused** | Audio pausado durante pausa del juego |
+
 ## ⚡ Optimizaciones Implementadas
 
 ### 🔧 Rendimiento
 - **Pooling de objetos**: Reutilización de enemigos
 - **Frustum culling**: Solo renderiza objetos visibles
 - **Física optimizada**: 60 FPS estables con múltiples objetos
+- **Audio streaming**: Carga eficiente de archivos de audio grandes
 
 ### 🧠 IA
 - **Detección por distancia**: Los enemigos solo calculan IA cuando el jugador está cerca
@@ -186,6 +261,17 @@ Estados disponibles:
 - **Smart pointers**: Gestión automática de memoria
 - **RAII**: Recursos liberados automáticamente
 - **Minimal copying**: Referencias y movimientos para eficiencia
+- **Audio streaming**: Los archivos de audio se cargan bajo demanda
+
+### Problemas de Audio Comunes
+
+#### "No se escucha música"
+1. Verificar que existan los archivos:
+   - `assets/MenuFondo.ogg`
+   - `assets/GameplaySound.ogg`
+2. Presionar **F9** para ver el estado del audio
+3. Usar **M** para verificar que no esté silenciado
+4. Usar **+** para subir el volumen
 
 
 ## 📄 Licencia
@@ -194,11 +280,12 @@ Este proyecto está bajo la Licencia MIT
 
 ## 🙏 Reconocimientos
 
-- **SFML** - Framework de multimedia
+- **SFML** - Framework de multimedia y audio
 - **Box2D** - Motor de físicas 2D  
 - **Castlevania** - Inspiración original de Konami
 - Sprites y assets creados para el proyecto
+- Música y efectos de sonido bajo licencias Creative Commons
 
 ---
 
-**¡Disfruta explorando el castillo y enfrentando a las criaturas de la noche!** 🌙🏰
+**¡Disfruta explorando el castillo y enfrentando a las criaturas de la noche con una experiencia audiovisual completa!** 🌙🏰🎵

@@ -190,7 +190,7 @@ Estados disponibles:
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT - mira el archivo `LICENSE` para más detalles.
+Este proyecto está bajo la Licencia MIT 
 
 ## 🙏 Reconocimientos
 

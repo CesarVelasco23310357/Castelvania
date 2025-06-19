@@ -90,7 +90,9 @@ public:
     
     // Gestión de cuerpos
     void destroyBody(void* userData);
+    void destroyBody(b2Body* body); 
     b2Body* getBody(void* userData);
+    void destroyAllPlatforms(); 
     PhysicsBody* getPhysicsBody(void* userData);
     
     // Utilidades de conversión

@@ -84,10 +84,10 @@ private:
     // ZOMBIE - zombie.png
     // Fila 1: 1 frame IDLE, Fila 2: 4 frames MOVING
 struct ZombieSprites {
-    static const int IDLE_START_X = 0;
+    static const int IDLE_START_X = 45;
     static const int IDLE_START_Y = 0;
     static const int IDLE_FRAME_COUNT = 1;
-    static const int IDLE_FRAME_WIDTH = 696;
+    static const int IDLE_FRAME_WIDTH = 177;
     static const int IDLE_FRAME_HEIGHT = 158;
     
     static const int MOVING_START_X = 0;
@@ -149,12 +149,11 @@ struct MurcielagoSprites {
     // ===================================
     // Configuración de físicas por tipo
     // ===================================
-    static constexpr float MURCIELAGO_FLY_FORCE = 8.0f;
-    static constexpr float ESQUELETO_JUMP_FORCE = 7.0f;
-    static constexpr float ZOMBIE_MOVEMENT_FORCE = 5.0f;
-    static constexpr float DEFAULT_MOVEMENT_FORCE = 6.0f;
-    static constexpr float DIRECTION_CHANGE_TIME = 2.0f;  // Cambiar dirección cada 2 segundos
-    
+     static constexpr float MURCIELAGO_FLY_FORCE = 12.0f;        // Aumentado de 8.0f
+    static constexpr float ESQUELETO_JUMP_FORCE = 9.0f;         // Aumentado de 7.0f
+    static constexpr float ZOMBIE_MOVEMENT_FORCE = 8.0f;        // Aumentado de 5.0f
+    static constexpr float DEFAULT_MOVEMENT_FORCE = 10.0f;      // Aumentado de 6.0f
+    static constexpr float DIRECTION_CHANGE_TIME = 3.0f;        // Aumentado de 2.0f (patrullaje más persistente)
 public:
     // Constructor
     CEnemy(EnemyType type, float x, float y);

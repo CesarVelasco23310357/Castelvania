@@ -337,10 +337,11 @@ void CGame::processGameInput(float deltaTime) {
     if (!m_player) return;
     
     handlePlayerMovement(deltaTime);
-    if (isKeyJustPressed(sf::Keyboard::I)) 
-    {
-    debugPositions();
+    
+    if (isKeyJustPressed(sf::Keyboard::I)) {
+        debugPositions();
     }   
+    
     if (isKeyJustPressed(sf::Keyboard::W) || isKeyJustPressed(sf::Keyboard::Space)) {
         handlePlayerJump();
     }
@@ -357,10 +358,49 @@ void CGame::processGameInput(float deltaTime) {
     if (isKeyJustPressed(sf::Keyboard::P)) {
         debugFullPhysicsState();
     }
- 
-    // ===============================================
-    // NUEVO: Controles de debug adicionales
-    // ===============================================
+    
+    // Controles de debug de plataformas
+    if (isKeyJustPressed(sf::Keyboard::F1)) {
+        debugShowPlatformPositions();
+    }
+    
+    if (isKeyJustPressed(sf::Keyboard::F2)) {
+        adjustPlatformOffset(0.0f, -5.0f);
+    }
+    
+    if (isKeyJustPressed(sf::Keyboard::F3)) {
+        adjustPlatformOffset(0.0f, 5.0f);
+    }
+    
+    if (isKeyJustPressed(sf::Keyboard::F4)) {
+        adjustPlatformOffset(-5.0f, 0.0f);
+    }
+    
+    if (isKeyJustPressed(sf::Keyboard::F5)) {
+        adjustPlatformOffset(5.0f, 0.0f);
+    }
+    
+    if (isKeyJustPressed(sf::Keyboard::F6)) {
+        resetPlatformOffsets();
+    }
+    
+    // ===================================
+    // CORREGIDO: Llamadas a través del nivel activo
+    // ===================================
+    if (isKeyJustPressed(sf::Keyboard::F7)) {
+        CLevel* activeLevel = getActiveLevel();
+        if (activeLevel) {
+            activeLevel->adjustPlatformThickness(10.0f);   // Hacer MÁS GRUESAS
+        }
+    }
+    
+    if (isKeyJustPressed(sf::Keyboard::F8)) {
+        CLevel* activeLevel = getActiveLevel();
+        if (activeLevel) {
+            activeLevel->adjustPlatformThickness(-10.0f);  // Hacer MÁS DELGADAS
+        }
+    }
+    
     if (isKeyJustPressed(sf::Keyboard::T)) {
         debugPlatformInfo();
     }
@@ -370,12 +410,110 @@ void CGame::processGameInput(float deltaTime) {
     }
 }
 
+
 void CGame::processPauseInput() {
     if (isKeyJustPressed(sf::Keyboard::R)) {
         restartLevel();
     }
 }
+void CGame::debugShowPlatformPositions() {
+    std::cout << "\n🔍 DEBUG DE POSICIONES DE PLATAFORMAS" << std::endl;
+    std::cout << "=====================================" << std::endl;
+    
+    if (!getActiveLevel()) {
+        std::cout << "❌ No hay nivel activo" << std::endl;
+        return;
+    }
+    
+    const auto& platforms = getActiveLevel()->getPlatforms();
+    std::cout << "Total de plataformas: " << platforms.size() << std::endl;
+    
+    for (size_t i = 0; i < platforms.size(); i++) {
+        const auto& platform = platforms[i];
+        
+        std::cout << "\n--- PLATAFORMA " << (i+1) << " ---" << std::endl;
+        
+        // Posición visual
+        sf::Vector2f visualPos = platform.floorSprite.getPosition();
+        sf::Vector2f visualSize = platform.size;
+        
+        std::cout << "🎨 VISUAL:" << std::endl;
+        std::cout << "   Esquina: (" << visualPos.x << ", " << visualPos.y << ")" << std::endl;
+        std::cout << "   Centro: (" << (visualPos.x + visualSize.x/2) << ", " << (visualPos.y + visualSize.y/2) << ")" << std::endl;
+        std::cout << "   Tamaño: " << visualSize.x << "x" << visualSize.y << std::endl;
+        
+        // Posición física
+        if (platform.physicsBody) {
+            b2Vec2 physicsPos = platform.physicsBody->GetPosition();
+            float physicsCenterX = physicsPos.x * 30.0f;  // Convertir a píxeles
+            float physicsCenterY = physicsPos.y * 30.0f;
+            
+            std::cout << "⚙️ FÍSICA:" << std::endl;
+            std::cout << "   Centro: (" << physicsCenterX << ", " << physicsCenterY << ")" << std::endl;
+            std::cout << "   Esquina calculada: (" << (physicsCenterX - visualSize.x/2) << ", " << (physicsCenterY - visualSize.y/2) << ")" << std::endl;
+            
+            // Diferencia
+            float diffX = visualPos.x - (physicsCenterX - visualSize.x/2);
+            float diffY = visualPos.y - (physicsCenterY - visualSize.y/2);
+            
+            std::cout << "🎯 DIFERENCIA:" << std::endl;
+            std::cout << "   X: " << diffX << " píxeles" << std::endl;
+            std::cout << "   Y: " << diffY << " píxeles" << std::endl;
+            
+            if (std::abs(diffX) > 2.0f || std::abs(diffY) > 2.0f) {
+                std::cout << "   ⚠️ DESALINEACIÓN DETECTADA!" << std::endl;
+            } else {
+                std::cout << "   ✅ Alineación correcta" << std::endl;
+            }
+        }
+    }
+    
+    std::cout << "\n🎮 CONTROLES DE AJUSTE:" << std::endl;
+    std::cout << "F2 = Mover ARRIBA | F3 = Mover ABAJO" << std::endl;
+    std::cout << "F4 = Mover IZQUIERDA | F5 = Mover DERECHA" << std::endl;
+    std::cout << "F6 = RESETEAR | F1 = Mostrar posiciones" << std::endl;
+    std::cout << "=====================================\n" << std::endl;
+}
 
+void CGame::adjustPlatformOffset(float offsetX, float offsetY) {
+    std::cout << "\n🔧 AJUSTANDO PLATAFORMAS: (" << offsetX << ", " << offsetY << ")" << std::endl;
+    
+    if (!getActiveLevel()) return;
+    
+    // Aquí moveremos SOLO las plataformas visuales para alinearlas con las físicas
+    auto& platforms = const_cast<std::vector<PhysicalPlatform>&>(getActiveLevel()->getPlatforms());
+    
+    for (auto& platform : platforms) {
+        // Mover solo el sprite visual
+        sf::Vector2f currentPos = platform.floorSprite.getPosition();
+        platform.floorSprite.setPosition(currentPos.x + offsetX, currentPos.y + offsetY);
+        
+        // También mover el shape de respaldo
+        sf::Vector2f currentShapePos = platform.shape.getPosition();
+        platform.shape.setPosition(currentShapePos.x + offsetX, currentShapePos.y + offsetY);
+        
+        std::cout << "   Plataforma movida de (" << currentPos.x << "," << currentPos.y 
+                  << ") a (" << (currentPos.x + offsetX) << "," << (currentPos.y + offsetY) << ")" << std::endl;
+    }
+    
+    std::cout << "✅ Ajuste aplicado. Presiona F1 para ver nuevas posiciones." << std::endl;
+}
+
+void CGame::resetPlatformOffsets() {
+    std::cout << "\n🔄 RESETEANDO POSICIONES DE PLATAFORMAS..." << std::endl;
+    
+    if (!getActiveLevel()) return;
+    
+    auto& platforms = const_cast<std::vector<PhysicalPlatform>&>(getActiveLevel()->getPlatforms());
+    
+    for (auto& platform : platforms) {
+        // Resetear a la posición original
+        platform.floorSprite.setPosition(platform.position.x, platform.position.y);
+        platform.shape.setPosition(platform.position.x, platform.position.y);
+    }
+    
+    std::cout << "✅ Plataformas reseteadas a posiciones originales." << std::endl;
+}
 bool CGame::isKeyJustPressed(sf::Keyboard::Key key) {
     bool currentState = sf::Keyboard::isKeyPressed(key);
     bool wasPressed = m_keyPressed[key];
@@ -882,22 +1020,34 @@ void CGame::updateUI() {
 }
 
 void CGame::renderMenu() {
-    m_titleText.setString("CASTELVANIA");
-    m_titleText.setCharacterSize(48);
-    m_titleText.setFillColor(sf::Color::Red);
-    centerText(m_titleText, 200.0f);
+    // ===================================
+    // RENDERIZAR IMAGEN DE FONDO PRIMERO
+    // ===================================
+    if (m_titleScreenTexture.getSize().x > 0) {
+        // Si la textura está cargada, dibujar la imagen de título
+        m_window.draw(m_titleScreenSprite);
+
+    } 
+    
+    // ===================================
+    // RENDERIZAR TEXTOS ENCIMA DE LA IMAGEN
+    // ===================================
+    // Texto principal con fondo semi-transparente para legibilidad
+    m_titleText.setString("PRESIONA ENTER PARA COMENZAR");
+    m_titleText.setCharacterSize(32);
+    m_titleText.setFillColor(sf::Color::White);
+    m_titleText.setOutlineThickness(2.0f);
+    m_titleText.setOutlineColor(sf::Color::Black);
+    centerText(m_titleText, 450.0f);  // Posición baja para no tapar la imagen
     m_window.draw(m_titleText);
     
-    m_instructionsText.setString("Presiona ENTER para comenzar");
-    m_instructionsText.setCharacterSize(24);
-    m_instructionsText.setFillColor(sf::Color::White);
-    centerText(m_instructionsText, 350.0f);
-    m_window.draw(m_instructionsText);
-    
-    m_statusText.setString("A/D = Mover, W/ESPACIO = Saltar, ENTER = Atacar, ESC = Pausar");
-    m_statusText.setCharacterSize(18);
+    // Instrucciones de controles
+    m_statusText.setString("A/D = Mover | W/ESPACIO = Saltar | ENTER = Atacar | ESC = Pausar");
+    m_statusText.setCharacterSize(16);
     m_statusText.setFillColor(sf::Color::Yellow);
-    centerText(m_statusText, 450.0f);
+    m_statusText.setOutlineThickness(1.0f);
+    m_statusText.setOutlineColor(sf::Color::Black);
+    centerText(m_statusText, 520.0f);
     m_window.draw(m_statusText);
 }
 
@@ -1212,9 +1362,46 @@ void CGame::initializeWindow() {
 }
 
 void CGame::loadResources() {
-    // Por ahora solo intentamos cargar la fuente
-    // En el futuro aquí cargaríamos texturas, sonidos, etc.
-    std::cout << "Cargando recursos..." << std::endl;
+    
+    
+    // ===================================
+    // CARGAR IMAGEN DE TÍTULO
+    // ===================================
+    
+    if (m_titleScreenTexture.loadFromFile("assets/title_screen.png")) {
+        
+        
+        // Configurar sprite de título
+        m_titleScreenSprite.setTexture(m_titleScreenTexture);
+        
+        // ===================================
+        // ESCALAR IMAGEN PARA AJUSTARSE A LA VENTANA (800x600)
+        // ===================================
+        sf::Vector2u textureSize = m_titleScreenTexture.getSize();
+        std::cout << "  Tamaño original: " << textureSize.x << "x" << textureSize.y << std::endl;
+        
+        // Calcular escalado para ajustar a 800x600 manteniendo aspecto
+        float scaleX = 800.0f / textureSize.x;  // 800 / 1011 = ~0.79
+        float scaleY = 600.0f / textureSize.y;  // 600 / 738 = ~0.81
+        
+        // Usar el menor escalado para que quepa completa
+        float finalScale = std::min(scaleX, scaleY);
+        m_titleScreenSprite.setScale(finalScale, finalScale);
+        
+        // Centrar la imagen
+        sf::FloatRect spriteBounds = m_titleScreenSprite.getGlobalBounds();
+        float centerX = (800.0f - spriteBounds.width) / 2.0f;
+        float centerY = (600.0f - spriteBounds.height) / 2.0f;
+        m_titleScreenSprite.setPosition(centerX, centerY);
+        
+        std::cout << " Imagen escalada y centrada (escala: " << finalScale << ")" << std::endl;
+        
+    } else {
+        std::cerr << "❌ Error: No se pudo cargar assets/title_screen.png" << std::endl;
+        std::cerr << "   Se usará fondo negro por defecto" << std::endl;
+    }
+    
+    std::cout << "Recursos cargados." << std::endl;
 }
 
 void CGame::setupGameSettings() {

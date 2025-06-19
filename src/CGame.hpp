@@ -58,7 +58,9 @@ private:
     sf::Text m_levelText;
     sf::Text m_healthText;
     sf::Text m_scoreText;
-    
+    sf::Texture m_titleScreenTexture;           // ← NUEVA: Textura de la pantalla de título
+    sf::Sprite m_titleScreenSprite;             // ← NUEVA: Sprite de la pantalla de título
+
     // Game statistics
     int m_totalScore;
     int m_levelsCompleted;
@@ -80,14 +82,16 @@ public:
     void initialize();
     void cleanup();
     bool isRunning() const;
-    
+    void debugShowPlatformPositions();         // ← NUEVA
+    void adjustPlatformOffset(float x, float y); // ← NUEVA  
+    void resetPlatformOffsets();               // ← NUEVA
     // Getters
     GameState getGameState() const;
     int getCurrentLevel() const;          // Devuelve el número del nivel (1, 2, 3...)
     int getTotalScore() const;
     float getTotalPlayTime() const;
     CPhysics* getPhysics() const;         // Acceso al sistema de físicas
-    
+
     // Game control
     void startNewGame();
     void pauseGame();

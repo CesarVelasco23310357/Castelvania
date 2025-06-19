@@ -331,27 +331,33 @@ void CEnemy::moveWithPhysics(const sf::Vector2f& targetPosition, float deltaTime
     float distance = calculateDistance(m_position, targetPosition);
     
     if (distance <= m_attackRange) {
-        setMoving(false);  // ← NUEVO: Parar animación
+        setMoving(false);
         return;
     }
     
     sf::Vector2f direction = targetPosition - m_position;
     float moveDirection = 0.0f;
     
-    if (std::abs(direction.x) > 10.0f) {
+    // ===================================
+    // CORREGIDO: Detección de movimiento más sensible
+    // ===================================
+    if (std::abs(direction.x) > 5.0f) {  // Reducido de 10.0f a 5.0f
         moveDirection = (direction.x > 0) ? 1.0f : -1.0f;
-        setMoving(true);  // ← NUEVO: Activar animación
+        setMoving(true);
     } else {
-        setMoving(false); // ← NUEVO: Parar animación
+        setMoving(false);
     }
     
     // Aplicar movimiento según el tipo
     if (m_canFly && m_enemyType == EnemyType::MURCIELAGO) {
         handleMurcieelagoAI(targetPosition, deltaTime);
     } else {
-        applyMovementForce(moveDirection);
+        // ===================================
+        // CORREGIDO: Fuerza de movimiento aumentada
+        // ===================================
+        applyMovementForce(moveDirection * 1.5f);  // Multiplicador adicional
         
-        if (m_enemyType == EnemyType::ESQUELETO && m_isGrounded && std::abs(direction.y) > 50.0f) {
+        if (m_enemyType == EnemyType::ESQUELETO && m_isGrounded && std::abs(direction.y) > 30.0f) {
             jump();
         }
     }
@@ -428,8 +434,11 @@ void CEnemy::fly() {
 void CEnemy::patrol() {
     if (!m_physicsEnabled || !m_physicsBody) return;
     
-    applyMovementForce(static_cast<float>(m_movementDirection) * 0.5f);
-    setMoving(true);  // ← NUEVO: Activar animación durante patrullaje
+    // ===================================
+    // CORREGIDO: Patrullaje más dinámico
+    // ===================================
+    applyMovementForce(static_cast<float>(m_movementDirection) * 0.8f);  // Aumentado de 0.5f
+    setMoving(true);
 }
 
 // ===================================
@@ -448,17 +457,26 @@ void CEnemy::handleMurcieelagoAI(const sf::Vector2f& playerPosition, float delta
     sf::Vector2f direction = playerPosition - m_position;
     float distance = calculateDistance(m_position, playerPosition);
     
-    if (distance <= m_detectionRange && distance > m_attackRange) {
+    // ===================================
+    // CORREGIDO: IA de murciélago más efectiva
+    // ===================================
+    if (distance <= m_detectionRange * 1.5f && distance > m_attackRange) {  // 50% más de rango
         float forceX = (direction.x > 0) ? m_movementForce : -m_movementForce;
         float forceY = (direction.y > 0) ? m_flyForce : -m_flyForce;
         
-        m_physics->applyForce(this, forceX * 0.5f, forceY * 0.3f);
-        setMoving(true);  // ← NUEVO: Activar animación
+        // ===================================
+        // CORREGIDO: Fuerzas más fuertes
+        // ===================================
+        m_physics->applyForce(this, forceX * 0.8f, forceY * 0.5f);  // Aumentado de 0.5f y 0.3f
+        setMoving(true);
         
+        // ===================================
+        // CORREGIDO: Velocidad máxima más alta
+        // ===================================
         b2Vec2 velocity = m_physicsBody->GetLinearVelocity();
-        if (velocity.Length() > 8.0f) {
+        if (velocity.Length() > 10.0f) {  // Aumentado de 8.0f
             velocity.Normalize();
-            velocity *= 8.0f;
+            velocity *= 10.0f;
             m_physicsBody->SetLinearVelocity(velocity);
         }
     }
@@ -473,18 +491,31 @@ void CEnemy::handleEsqueletoAI(const sf::Vector2f& playerPosition, float deltaTi
     sf::Vector2f direction = playerPosition - m_position;
     float distance = calculateDistance(m_position, playerPosition);
     
-    if (distance <= m_detectionRange && distance > m_attackRange) {
+    // ===================================
+    // CORREGIDO: Rango de detección más amplio
+    // ===================================
+    if (distance <= m_detectionRange * 1.2f && distance > m_attackRange) {  // 20% más de rango
         float moveDirection = (direction.x > 0) ? 1.0f : -1.0f;
-        applyMovementForce(moveDirection);
-        setMoving(true);  // ← NUEVO: Activar animación
         
-        if (m_isGrounded && (direction.y < -30.0f || std::abs(direction.x) < 50.0f)) {
+        // ===================================
+        // CORREGIDO: Movimiento más agresivo
+        // ===================================
+        applyMovementForce(moveDirection * 1.3f);  // Multiplicador adicional
+        setMoving(true);
+        
+        // ===================================
+        // CORREGIDO: Salto más frecuente
+        // ===================================
+        if (m_isGrounded && (direction.y < -20.0f || std::abs(direction.x) < 30.0f)) {  // Más sensible
             jump();
         }
     } else if (distance > m_detectionRange) {
+        // ===================================
+        // CORREGIDO: Patrullaje más activo
+        // ===================================
         patrol();
     } else {
-        setMoving(false);  // ← NUEVO: Parar animación
+        setMoving(false);
     }
 }
 
@@ -497,14 +528,21 @@ void CEnemy::handleZombieAI(const sf::Vector2f& playerPosition, float deltaTime)
     sf::Vector2f direction = playerPosition - m_position;
     float distance = calculateDistance(m_position, playerPosition);
     
-    if (distance <= m_detectionRange && distance > m_attackRange) {
+    // ===================================
+    // CORREGIDO: IA de zombie más persistente
+    // ===================================
+    if (distance <= m_detectionRange * 1.3f && distance > m_attackRange) {  // 30% más de rango
         float moveDirection = (direction.x > 0) ? 1.0f : -1.0f;
-        applyMovementForce(moveDirection * 0.7f);
-        setMoving(true);  // ← NUEVO: Activar animación
+        
+        // ===================================
+        // CORREGIDO: Zombies menos lentos
+        // ===================================
+        applyMovementForce(moveDirection * 1.0f);  // Era 0.7f, ahora 1.0f
+        setMoving(true);
     } else if (distance > m_detectionRange) {
         patrol();
     } else {
-        setMoving(false);  // ← NUEVO: Parar animación
+        setMoving(false);
     }
 }
 
@@ -515,11 +553,41 @@ void CEnemy::applyMovementForce(float direction) {
     if (!m_physicsEnabled || !m_physicsBody || direction == 0.0f) return;
     
     b2Vec2 velocity = m_physicsBody->GetLinearVelocity();
-    float maxVelocity = (m_enemyType == EnemyType::ZOMBIE) ? 2.0f : 4.0f;
     
+    // ===================================
+    // CORREGIDO: Velocidades máximas más altas y diferenciadas
+    // ===================================
+    float maxVelocity;
+    switch (m_enemyType) {
+        case EnemyType::ZOMBIE:
+            maxVelocity = 3.0f;  // Aumentado de 2.0f
+            break;
+        case EnemyType::ESQUELETO:
+            maxVelocity = 5.0f;  // Aumentado de 4.0f
+            break;
+        case EnemyType::MURCIELAGO:
+            maxVelocity = 6.0f;  // Aumentado de 4.0f
+            break;
+        default:
+            maxVelocity = 4.0f;
+            break;
+    }
+    
+    // ===================================
+    // CORREGIDO: Fuerza base más alta
+    // ===================================
     if (std::abs(velocity.x) < maxVelocity) {
-        float force = direction * m_movementForce;
+        float force = direction * m_movementForce * 1.2f;  // Multiplicador adicional
         m_physics->applyForce(this, force, 0.0f);
+    }
+    
+    // ===================================
+    // NUEVO: Ayuda adicional si está muy lento
+    // ===================================
+    if (std::abs(velocity.x) < 0.5f && direction != 0.0f) {
+        // Impulso adicional si está casi parado
+        float boostForce = direction * m_movementForce * 2.0f;
+        m_physics->applyForce(this, boostForce, 0.0f);
     }
 }
 
@@ -565,11 +633,17 @@ void CEnemy::updateAI(const sf::Vector2f& playerPosition, float deltaTime) {
     
     updateMovementDirection(deltaTime);
     
-    if (distanceToPlayer <= m_detectionRange) {
+    // ===================================
+    // CORREGIDO: Lógica de IA más agresiva
+    // ===================================
+    if (distanceToPlayer <= m_detectionRange * 1.2f) {  // 20% más de rango base
         if (distanceToPlayer <= m_attackRange && canAttack()) {
             attack();
-            setMoving(false);  // ← NUEVO: Parar animación al atacar
+            setMoving(false);
         } else {
+            // ===================================
+            // CORREGIDO: Siempre usar físicas si está disponible
+            // ===================================
             if (m_physicsEnabled) {
                 switch (m_enemyType) {
                     case EnemyType::MURCIELAGO:
@@ -583,14 +657,18 @@ void CEnemy::updateAI(const sf::Vector2f& playerPosition, float deltaTime) {
                         break;
                 }
             } else {
+                // Fallback sin físicas
                 moveTowards(playerPosition, deltaTime);
             }
         }
     } else {
+        // ===================================
+        // CORREGIDO: Patrullaje cuando no detecta al jugador
+        // ===================================
         if (m_physicsEnabled) {
             patrol();
         } else {
-            setMoving(false);  // ← NUEVO: Parar animación cuando no patrulla
+            setMoving(false);
         }
     }
 }
@@ -700,7 +778,7 @@ void CEnemy::setupEnemyType(EnemyType type) {
             m_maxHealth = 30;
             m_damage = 10;
             m_speed = 120.0f;
-            m_detectionRange = 150.0f;
+            m_detectionRange = 200.0f;  // Aumentado de 150.0f
             m_attackRange = 35.0f;
             m_attackCooldown = 1.0f;
             m_color = sf::Color::Magenta;
@@ -712,7 +790,7 @@ void CEnemy::setupEnemyType(EnemyType type) {
             m_maxHealth = 60;
             m_damage = 20;
             m_speed = 80.0f;
-            m_detectionRange = 120.0f;
+            m_detectionRange = 160.0f;  // Aumentado de 120.0f
             m_attackRange = 40.0f;
             m_attackCooldown = 1.5f;
             m_color = sf::Color::White;
@@ -724,7 +802,7 @@ void CEnemy::setupEnemyType(EnemyType type) {
             m_maxHealth = 100;
             m_damage = 30;
             m_speed = 50.0f;
-            m_detectionRange = 100.0f;
+            m_detectionRange = 140.0f;  // Aumentado de 100.0f
             m_attackRange = 45.0f;
             m_attackCooldown = 2.0f;
             m_color = sf::Color::Green;
@@ -736,7 +814,7 @@ void CEnemy::setupEnemyType(EnemyType type) {
             m_maxHealth = 50;
             m_damage = 15;
             m_speed = 70.0f;
-            m_detectionRange = 100.0f;
+            m_detectionRange = 120.0f;
             m_attackRange = 40.0f;
             m_attackCooldown = 1.5f;
             m_color = sf::Color::Red;

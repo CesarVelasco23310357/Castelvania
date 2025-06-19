@@ -135,51 +135,80 @@ b2Body* CPhysics::createEnemyBody(float x, float y, void* userData) {
 b2Body* CPhysics::createPlatform(float x, float y, float width, float height) {
     if (!m_world) return nullptr;
     
-    std::cout << "🟩 Creando plataforma CORREGIDA: pos(" << x << "," << y << ") tamaño(" << width << "x" << height << ")" << std::endl;
+    std::cout << "\n🟩 CREANDO PLATAFORMA FÍSICA SINCRONIZADA:" << std::endl;
+    std::cout << "   📍 Visual: esquina superior izquierda (" << x << "," << y << ")" << std::endl;
+    std::cout << "   📐 Tamaño: " << width << "x" << height << " píxeles" << std::endl;
     
     // ===================================
-    // CORREGIDO: Posición correcta de la plataforma
-    // La posición (x,y) que recibimos es la esquina superior izquierda del sprite visual
-    // Box2D necesita el centro, así que calculamos correctamente
+    // PASO 1: CALCULAR CENTRO EXACTO DE LA PLATAFORMA VISUAL
     // ===================================
     float centerX = x + (width / 2.0f);
     float centerY = y + (height / 2.0f);
     
-    std::cout << "    Centro calculado: (" << centerX << "," << centerY << ")" << std::endl;
+    std::cout << "   🎯 Centro calculado: (" << centerX << "," << centerY << ") píxeles" << std::endl;
     
-    // Definición del cuerpo estático
+    // ===================================
+    // PASO 2: CONVERTIR A COORDENADAS DE BOX2D (METROS)
+    // ===================================
+    float centerX_meters = pixelsToMeters(centerX);
+    float centerY_meters = pixelsToMeters(centerY);
+    float width_meters = pixelsToMeters(width);
+    float height_meters = pixelsToMeters(height);
+    
+    std::cout << "   🔧 Centro en metros: (" << centerX_meters << "," << centerY_meters << ")" << std::endl;
+    std::cout << "   🔧 Tamaño en metros: " << width_meters << "x" << height_meters << std::endl;
+    
+    // ===================================
+    // PASO 3: CREAR CUERPO FÍSICO EN LA POSICIÓN EXACTA
+    // ===================================
     b2BodyDef bodyDef;
     bodyDef.type = b2_staticBody;
-    bodyDef.position.Set(pixelsToMeters(centerX), pixelsToMeters(centerY));
+    bodyDef.position.Set(centerX_meters, centerY_meters);
     
     b2Body* body = m_world->CreateBody(&bodyDef);
     
-    // Forma de la plataforma 
+    // ===================================
+    // PASO 4: CREAR FORMA CON TAMAÑO EXACTO
+    // ===================================
     b2PolygonShape shape;
-    float w = pixelsToMeters(width);
-    float h = pixelsToMeters(height);
-    shape.SetAsBox(w / 2.0f, h / 2.0f);
+    shape.SetAsBox(width_meters / 2.0f, height_meters / 2.0f);
     
-    // Propiedades físicas CORREGIDAS
+    // ===================================
+    // PASO 5: PROPIEDADES FÍSICAS OPTIMIZADAS
+    // ===================================
     b2FixtureDef fixtureDef;
     fixtureDef.shape = &shape;
-    fixtureDef.density = 0.0f;        // Sin densidad (estático)
-    fixtureDef.friction = 0.8f;       // Fricción alta para que se agarre bien
+    fixtureDef.density = 0.0f;        // Estático
+    fixtureDef.friction = 0.7f;       // CORREGIDO: Fricción balanceada (era 0.8f)
     fixtureDef.restitution = 0.0f;    // Sin rebote
     fixtureDef.filter.categoryBits = CATEGORY_PLATFORM;
     fixtureDef.filter.maskBits = CATEGORY_PLAYER | CATEGORY_ENEMY;
     
-    // ===================================
-    // NUEVO: Marcar como plataforma para detección de contactos
-    // ===================================
-    fixtureDef.userData.pointer = reinterpret_cast<uintptr_t>(nullptr); // Plataformas no tienen userData específico
-    
     body->CreateFixture(&fixtureDef);
+    
+    // ===================================
+    // PASO 6: VERIFICACIÓN DE SINCRONIZACIÓN
+    // ===================================
+    // Convertir de vuelta para verificar
+    b2Vec2 physicsPos = body->GetPosition();
+    float verifyX = metersToPixels(physicsPos.x) - (width / 2.0f);
+    float verifyY = metersToPixels(physicsPos.y) - (height / 2.0f);
+    
+    std::cout << "   ✅ VERIFICACIÓN:" << std::endl;
+    std::cout << "      Visual esperada: (" << x << "," << y << ")" << std::endl;
+    std::cout << "      Física calculada: (" << verifyX << "," << verifyY << ")" << std::endl;
+    std::cout << "      Diferencia: (" << std::abs(x - verifyX) << "," << std::abs(y - verifyY) << ") píxeles" << std::endl;
+    
+    if (std::abs(x - verifyX) < 1.0f && std::abs(y - verifyY) < 1.0f) {
+        std::cout << "   🎯 SINCRONIZACIÓN PERFECTA!" << std::endl;
+    } else {
+        std::cout << "   ⚠️ ADVERTENCIA: Posible desalineación" << std::endl;
+    }
     
     // Almacenar información del cuerpo
     m_bodies.emplace(body, PhysicsBody(body, BodyType::PLATFORM, nullptr));
     
-    std::cout << "✅ Plataforma creada CORRECTAMENTE en centro físico: (" << centerX << "," << centerY << ")" << std::endl;
+    std::cout << "   ✅ Plataforma física creada exitosamente\n" << std::endl;
     return body;
 }
 
@@ -236,7 +265,23 @@ b2Body* CPhysics::getBody(void* userData) {
     auto it = m_bodies.find(userData);
     return (it != m_bodies.end()) ? it->second.body : nullptr;
 }
-
+void CPhysics::destroyBody(b2Body* body) {
+    if (!body || !m_world) return;
+    
+    std::cout << "🗑️ Destruyendo cuerpo físico directo" << std::endl;
+    
+    // Buscar en el mapa y eliminar
+    for (auto it = m_bodies.begin(); it != m_bodies.end(); ++it) {
+        if (it->second.body == body) {
+            m_bodies.erase(it);
+            break;
+        }
+    }
+    
+    // Destruir el cuerpo
+    m_world->DestroyBody(body);
+    std::cout << "✅ Cuerpo destruido exitosamente" << std::endl;
+}
 PhysicsBody* CPhysics::getPhysicsBody(void* userData) {
     auto it = m_bodies.find(userData);
     return (it != m_bodies.end()) ? &it->second : nullptr;
@@ -435,4 +480,26 @@ void PhysicsContactListener::updateGroundContacts() {
             ++it;
         }
     }
+}
+void CPhysics::destroyAllPlatforms() {
+    std::cout << "\n🧹 DESTRUYENDO TODAS LAS PLATAFORMAS FÍSICAS..." << std::endl;
+    
+    std::vector<b2Body*> platformsToDestroy;
+    
+    // Recopilar todas las plataformas
+    for (auto& pair : m_bodies) {
+        if (pair.second.type == BodyType::PLATFORM) {
+            platformsToDestroy.push_back(pair.second.body);
+        }
+    }
+    
+    std::cout << "   📊 Encontradas " << platformsToDestroy.size() << " plataformas para destruir" << std::endl;
+    
+    // Destruir cada plataforma
+    for (b2Body* platform : platformsToDestroy) {
+        destroyBody(platform);
+    }
+    
+    std::cout << "   ✅ Todas las plataformas físicas destruidas" << std::endl;
+    std::cout << "🧹 LIMPIEZA DE PLATAFORMAS COMPLETADA\n" << std::endl;
 }

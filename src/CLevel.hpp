@@ -31,14 +31,17 @@ struct SpawnPoint {
 // NUEVO: Estructura para plataformas físicas
 // ===================================
 struct PhysicalPlatform {
-    sf::RectangleShape shape;    // Representación visual
+    sf::RectangleShape shape;    // Representación visual de respaldo
+    sf::Sprite floorSprite;      // ← NUEVO: Sprite con textura de floor
     b2Body* physicsBody;         // Cuerpo físico
     sf::Vector2f position;
     sf::Vector2f size;
     sf::Color color;
+    bool hasTexture;             // ← NUEVO: Si tiene textura cargada
     
     PhysicalPlatform(float x, float y, float w, float h, sf::Color c = sf::Color::Green)
-        : physicsBody(nullptr), position(x, y), size(w, h), color(c) {
+        : physicsBody(nullptr), position(x, y), size(w, h), color(c), hasTexture(false) {
+        // Configurar shape de respaldo
         shape.setPosition(x, y);
         shape.setSize(sf::Vector2f(w, h));
         shape.setFillColor(c);
@@ -46,7 +49,6 @@ struct PhysicalPlatform {
         shape.setOutlineColor(sf::Color::Black);
     }
 };
-
 class CLevel {
 private:
     // Información del nivel
@@ -85,6 +87,7 @@ private:
     sf::Texture m_layer2Texture;
     sf::Sprite m_layer1Sprite;
     sf::Sprite m_layer2Sprite;
+    sf::Texture m_floorTexture;
     bool m_texturesLoaded;
     
     // Configuración
@@ -150,7 +153,6 @@ public:
     void addObstacle(float x, float y, float width, float height);
     void clearObstacles();
     bool isPositionBlocked(const sf::Vector2f& position) const;
-    
     // Verificaciones
     bool isPositionInBounds(const sf::Vector2f& position) const;
     void checkLevelCompletion();
@@ -158,7 +160,7 @@ public:
     // Métodos SFML
     void update(float deltaTime, const sf::Vector2f& playerPosition);
     void render(sf::RenderWindow& window);
-    
+    void adjustPlatformThickness(float deltaThickness);  // ← NUEVA
     // ===================================
     // NUEVO: Renderizado específico
     // ===================================

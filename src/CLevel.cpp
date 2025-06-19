@@ -322,38 +322,92 @@ void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf
         return;
     }
     
-    std::cout << "🟩 SINCRONIZANDO plataforma: pos(" << x << "," << y << ") tamaño(" << width << "x" << height << ")" << std::endl;
+    std::cout << "\n🟩 CREANDO PLATAFORMA CON TEXTURA GRUESA:" << std::endl;
+    std::cout << "   📍 Posición física: (" << x << "," << y << ")" << std::endl;
+    std::cout << "   📐 Tamaño físico: " << width << "x" << height << std::endl;
     
     // ===================================
-    // CREAR PLATAFORMA VISUAL EXACTA
+    // PASO 1: CREAR PLATAFORMA BASE
     // ===================================
     PhysicalPlatform platform(x, y, width, height, color);
     
     // ===================================
-    // CREAR CUERPO FÍSICO EN LA MISMA POSICIÓN EXACTA
+    // PASO 2: CONFIGURAR SPRITE VISUAL MÁS GRUESO
     // ===================================
-    std::cout << "   📍 Visual: esquina(" << x << "," << y << ") tamaño(" << width << "x" << height << ")" << std::endl;
+    if (m_floorTexture.getSize().x > 0) {
+        // ===================================
+        // HACER LA PARTE VISUAL MÁS GRUESA HACIA ABAJO
+        // ===================================
+        float visualThickness = 40.0f;  // Grosor visual fijo (puedes cambiar este valor)
+        
+        // Si la plataforma física ya es gruesa, usar su altura
+        float finalVisualHeight = std::max(height, visualThickness);
+        
+        std::cout << "   🎨 Grosor físico: " << height << " px" << std::endl;
+        std::cout << "   🎨 Grosor visual: " << finalVisualHeight << " px" << std::endl;
+        
+        // Configurar sprite con textura
+        platform.floorSprite.setTexture(m_floorTexture);
+        
+        // ===================================
+        // POSICIONAR: La parte SUPERIOR del visual coincide con la física
+        // ===================================
+        platform.floorSprite.setPosition(x, y);  // Misma posición superior
+        
+        // ===================================
+        // ESCALAR: Ajustar a nuevo tamaño visual
+        // ===================================
+        sf::Vector2u textureSize = m_floorTexture.getSize(); // 336x112
+        float scaleX = width / textureSize.x;                // Ancho igual
+        float scaleY = finalVisualHeight / textureSize.y;    // Altura aumentada
+        
+        platform.floorSprite.setScale(scaleX, scaleY);
+        platform.hasTexture = true;
+        
+        std::cout << "   📏 Escala aplicada: " << scaleX << "x" << scaleY << std::endl;
+        std::cout << "   📍 Visual se extiende de Y=" << y << " hasta Y=" << (y + finalVisualHeight) << std::endl;
+        
+        // ===================================
+        // ACTUALIZAR TAMBIÉN EL SHAPE DE RESPALDO
+        // ===================================
+        platform.shape.setPosition(x, y);
+        platform.shape.setSize(sf::Vector2f(width, finalVisualHeight));
+        platform.shape.setFillColor(color);
+        platform.shape.setOutlineThickness(2.0f);
+        platform.shape.setOutlineColor(sf::Color::White);
+        
+    } else {
+        // Fallback: usar rectángulo de color también más grueso
+        float visualThickness = 40.0f;
+        float finalVisualHeight = std::max(height, visualThickness);
+        
+        platform.shape.setPosition(x, y);
+        platform.shape.setSize(sf::Vector2f(width, finalVisualHeight));
+        platform.shape.setFillColor(color);
+        platform.shape.setOutlineThickness(2.0f);
+        platform.shape.setOutlineColor(sf::Color::White);
+        platform.hasTexture = false;
+        
+        std::cout << "   ⚠️ Usando color sólido grueso (textura no disponible)" << std::endl;
+    }
     
-    // Física usa el mismo sistema: esquina superior izquierda
-    platform.physicsBody = m_physics->createPlatform(x, y, width, height);
+    // ===================================
+    // PASO 3: CREAR CUERPO FÍSICO (TAMAÑO ORIGINAL - NO CAMBIAR)
+    // ===================================
+    std::cout << "   🔧 Creando cuerpo físico con tamaño original..." << std::endl;
+    platform.physicsBody = m_physics->createPlatform(x, y, width, height);  // Física original
     
     if (platform.physicsBody) {
-        // ===================================
-        // VERIFICAR SINCRONIZACIÓN PERFECTA
-        // ===================================
-        b2Vec2 physicsPos = platform.physicsBody->GetPosition();
-        float physicsPixelX = physicsPos.x * 30.0f;
-        float physicsPixelY = physicsPos.y * 30.0f;
-        
-        std::cout << "   🎯 Física: centro(" << physicsPixelX << "," << physicsPixelY << ") - calculado automáticamente" << std::endl;
-        std::cout << "   ✅ Plataforma visual y física SINCRONIZADAS" << std::endl;
-        
+        std::cout << "   ✅ Plataforma gruesa creada:" << std::endl;
+        std::cout << "      Física: " << width << "x" << height << " (jugabilidad)" << std::endl;
+        std::cout << "      Visual: " << width << "x" << std::max(height, 40.0f) << " (apariencia)" << std::endl;
         m_platforms.push_back(platform);
     } else {
-        std::cerr << "❌ Error: No se pudo crear cuerpo físico de la plataforma" << std::endl;
+        std::cerr << "    ERROR: No se pudo crear cuerpo físico" << std::endl;
     }
+    
+    std::cout << "🟩 PLATAFORMA GRUESA COMPLETADA\n" << std::endl;
 }
-
 // ===================================
 // NUEVO: Limpiar plataformas físicas
 // ===================================
@@ -445,11 +499,11 @@ void CLevel::render(sf::RenderWindow& window) {
         window.draw(m_background);
     }
     
-    // *** NUEVO: Renderizar plataformas físicas ***
+    // Renderizar plataformas con texturas
     renderPlatforms(window);
     
-    // Renderizar obstáculos visuales (sin físicas)
-    renderObstacles(window);
+    // COMENTAR/ELIMINAR ESTA LÍNEA PARA QUITAR LOS CUADRADOS GRISES:
+    // renderObstacles(window);  // ← COMENTA ESTA LÍNEA
     
     // Renderizar enemigos
     renderEnemies(window);
@@ -463,7 +517,13 @@ void CLevel::render(sf::RenderWindow& window) {
 // ===================================
 void CLevel::renderPlatforms(sf::RenderWindow& window) {
     for (const auto& platform : m_platforms) {
-        window.draw(platform.shape);
+        if (platform.hasTexture) {
+            // Renderizar con textura de floor.png
+            window.draw(platform.floorSprite);
+        } else {
+            // Fallback: renderizar rectángulo de color
+            window.draw(platform.shape);
+        }
     }
 }
 
@@ -481,6 +541,7 @@ void CLevel::printLevelInfo() const {
     std::cout << "Progreso: " << getCompletionPercentage() << "%\n";
     std::cout << "===========================\n";
 }
+
 
 void CLevel::printEnemyCount() const {
     std::cout << "Enemigos en " << m_levelName << ": " 
@@ -569,6 +630,18 @@ void CLevel::loadLevelTextures() {
     
     m_texturesLoaded = true; // Assume success, set to false if any fails
     
+    // ===================================
+    // CARGAR TEXTURA DEL SUELO/PLATAFORMAS
+    // ===================================
+    std::cout << "🏗️ Cargando textura de plataformas..." << std::endl;
+    if (!m_floorTexture.loadFromFile("assets/floor.png")) {
+        std::cerr << "❌ Error: No se pudo cargar assets/floor.png" << std::endl;
+        std::cerr << "   Las plataformas usarán colores sólidos" << std::endl;
+    } else {
+        sf::Vector2u floorSize = m_floorTexture.getSize();
+        std::cout << "✅ floor.png cargado (" << floorSize.x << "x" << floorSize.y << ")" << std::endl;
+    }
+    
     // Cargar layer 1 (fondo lejano)
     std::cout << "Intentando cargar: assets/layer_1.png" << std::endl;
     if (!m_layer1Texture.loadFromFile("assets/layer_1.png")) {
@@ -576,7 +649,7 @@ void CLevel::loadLevelTextures() {
         m_texturesLoaded = false;
     } else {
         sf::Vector2u size1 = m_layer1Texture.getSize();
-        std::cout << "✓ layer_1.png cargado (" << size1.x << "x" << size1.y << ")" << std::endl;
+        std::cout << "✅ layer_1.png cargado (" << size1.x << "x" << size1.y << ")" << std::endl;
     }
     
     // Cargar layer 2 (fondo cercano)
@@ -586,7 +659,7 @@ void CLevel::loadLevelTextures() {
         m_texturesLoaded = false;
     } else {
         sf::Vector2u size2 = m_layer2Texture.getSize();
-        std::cout << "✓ layer_2.png cargado (" << size2.x << "x" << size2.y << ")" << std::endl;
+        std::cout << "✅ layer_2.png cargado (" << size2.x << "x" << size2.y << ")" << std::endl;
     }
     
     if (m_texturesLoaded) {
@@ -847,4 +920,30 @@ void CLevel::configurePlatformsLevel3() {
     addPhysicalPlatform(600.0f, 400.0f, 80.0f, 15.0f, sf::Color::Cyan);
     
     std::cout << "✅ NIVEL 3: Plataformas avanzadas creadas" << std::endl;
+}
+void CLevel::adjustPlatformThickness(float deltaThickness) {
+    std::cout << "\n🔧 AJUSTANDO GROSOR DE PLATAFORMAS: " << deltaThickness << " px" << std::endl;
+    
+    for (auto& platform : m_platforms) {
+        if (platform.hasTexture && m_floorTexture.getSize().x > 0) {
+            // Ajustar escala Y del sprite
+            sf::Vector2f currentScale = platform.floorSprite.getScale();
+            sf::Vector2u textureSize = m_floorTexture.getSize();
+            
+            // Calcular nueva altura visual
+            float currentVisualHeight = currentScale.y * textureSize.y;
+            float newVisualHeight = std::max(20.0f, currentVisualHeight + deltaThickness);
+            float newScaleY = newVisualHeight / textureSize.y;
+            
+            platform.floorSprite.setScale(currentScale.x, newScaleY);
+            
+            // Ajustar también el shape de respaldo
+            sf::Vector2f shapeSize = platform.shape.getSize();
+            platform.shape.setSize(sf::Vector2f(shapeSize.x, newVisualHeight));
+            
+            std::cout << "   Plataforma: " << currentVisualHeight << " → " << newVisualHeight << " px" << std::endl;
+        }
+    }
+    
+    std::cout << "✅ Grosor ajustado. F7=Más grueso, F8=Más delgado" << std::endl;
 }

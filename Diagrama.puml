@@ -1,7 +1,7 @@
 @startuml Castelvania_Class_Diagram
 
 !theme plain
-title 🏰 CASTELVANIA - Diagrama de Clases UML
+title 🏰 CASTELVANIA - Diagrama de Clases UML (ACTUALIZADO - camelCase)
 
 ' Definir colores para diferentes tipos de clases
 skinparam class {
@@ -14,18 +14,21 @@ skinparam class {
 }
 
 ' ================================
-' CLASES PRINCIPALES
+' CLASES PRINCIPALES (ACTUALIZADAS)
 ' ================================
 
 class CGame <<Core>> {
-    -m_window: sf::RenderWindow
-    -m_gameState: GameState
-    -m_player: unique_ptr<CPlayer>
-    -m_levels: vector<unique_ptr<CLevel>>
-    -m_physics: unique_ptr<CPhysics>
-    -m_musica: unique_ptr<CMusica>
-    -m_currentLevelIndex: int
-    -m_totalScore: int
+    -window: sf::RenderWindow
+    -gameState: GameState
+    -player: unique_ptr<CPlayer>
+    -levels: vector<unique_ptr<CLevel>>
+    -physics: unique_ptr<CPhysics>
+    -musica: unique_ptr<CMusica>
+    -currentLevelIndex: int
+    -totalScore: int
+    -running: bool
+    -fontLoaded: bool
+    -inputCooldown: float
     --
     +run(): void
     +startNewGame(): void
@@ -36,16 +39,26 @@ class CGame <<Core>> {
 }
 
 class CPlayer <<Entity>> {
-    -m_name: string
-    -m_health: int
-    -m_position: sf::Vector2f
-    -m_physics: CPhysics*
-    -m_physicsBody: b2Body*
-    -m_currentState: PlayerState
-    -m_texturesLoaded: bool
+    -name: string
+    -health: int
+    -maxHealth: int
+    -position: sf::Vector2f
+    -speed: float
+    -physics: CPhysics*
+    -physicsBody: b2Body*
+    -physicsEnabled: bool
+    -grounded: bool
+    -jumpForce: float
+    -currentState: PlayerState
+    -currentFrame: int
+    -animationTimer: float
+    -texturesLoaded: bool
+    -hurt: bool
+    -hurtTimer: float
     --
     +initializePhysics(CPhysics*): void
     +move(float, float): void
+    +moveWithPhysics(float): void
     +jump(): void
     +attack(): void
     +takeDamage(int): void
@@ -54,33 +67,55 @@ class CPlayer <<Entity>> {
 }
 
 class CEnemy <<Entity>> {
-    -m_enemyType: EnemyType
-    -m_health: int
-    -m_position: sf::Vector2f
-    -m_physics: CPhysics*
-    -m_physicsBody: b2Body*
-    -m_currentState: EnemyState
-    -m_texturesLoaded: bool
+    -type: string
+    -enemyType: EnemyType
+    -health: int
+    -maxHealth: int
+    -damage: int
+    -position: sf::Vector2f
+    -speed: float
+    -physics: CPhysics*
+    -physicsBody: b2Body*
+    -physicsEnabled: bool
+    -grounded: bool
+    -flyCapable: bool
+    -currentState: EnemyState
+    -currentFrame: int
+    -animationTimer: float
+    -texturesLoaded: bool
+    -moving: bool
     --
     +initializePhysics(CPhysics*): void
     +updateAI(sf::Vector2f, float): void
     +moveTowards(sf::Vector2f, float): void
+    +moveWithPhysics(sf::Vector2f, float): void
     +attack(): int
     +takeDamage(int): void
+    +jump(): void
+    +fly(): void
     +update(float): void
     +render(sf::RenderWindow&): void
 }
 
 class CLevel <<Game>> {
-    -m_levelNumber: int
-    -m_state: LevelState
-    -m_physics: CPhysics*
-    -m_enemies: vector<unique_ptr<CEnemy>>
-    -m_platforms: vector<PhysicalPlatform>
-    -m_spawnPoints: vector<SpawnPoint>
+    -levelNumber: int
+    -levelName: string
+    -state: LevelState
+    -physics: CPhysics*
+    -enemies: vector<unique_ptr<CEnemy>>
+    -platforms: vector<PhysicalPlatform>
+    -spawnPoints: vector<SpawnPoint>
+    -levelSize: sf::Vector2f
+    -boundaries: sf::FloatRect
+    -levelTime: float
+    -totalEnemies: int
+    -enemiesKilled: int
+    -texturesLoaded: bool
+    -loaded: bool
     --
     +initializePhysics(CPhysics*): void
     +loadLevel(): void
+    +unloadLevel(): void
     +addEnemy(EnemyType, float, float): void
     +addPhysicalPlatform(float, float, float, float): void
     +update(float, sf::Vector2f): void
@@ -88,37 +123,49 @@ class CLevel <<Game>> {
 }
 
 class CPhysics <<Physics>> {
-    -m_world: unique_ptr<b2World>
-    -m_bodies: unordered_map<void*, PhysicsBody>
-    -m_contactListener: unique_ptr<PhysicsContactListener>
+    -world: unique_ptr<b2World>
+    -bodies: unordered_map<void*, PhysicsBody>
+    -contactListener: unique_ptr<PhysicsContactListener>
     --
     +createPlayerBody(float, float, void*): b2Body*
     +createEnemyBody(float, float, void*): b2Body*
     +createPlatform(float, float, float, float): b2Body*
+    +createWall(float, float, float, float): b2Body*
     +update(float): void
     +applyForce(void*, float, float): void
+    +applyImpulse(void*, float, float): void
     +isBodyOnGround(void*): bool
+    +canJump(void*): bool
+    +destroyBody(void*): void
 }
 
 class CMusica <<Audio>> {
-    -m_menuMusic: sf::Music
-    -m_gameplayMusic: sf::Music
-    -m_currentMusicType: MusicType
-    -m_audioState: AudioState
-    -m_masterVolume: float
-    -m_isMuted: bool
+    -menuMusic: sf::Music
+    -gameplayMusic: sf::Music
+    -currentMusicType: MusicType
+    -audioState: AudioState
+    -currentMusic: sf::Music*
+    -masterVolume: float
+    -musicVolume: float
+    -muted: bool
+    -fadeEnabled: bool
+    -fadeTimer: float
+    -fadeDuration: float
+    -musicLoaded: bool
     --
     +initialize(): bool
     +playMenuMusic(): void
     +playGameplayMusic(): void
     +fadeToMenuMusic(float): void
+    +fadeToGameplayMusic(float): void
     +setMasterVolumen(float): void
+    +setMusicVolumen(float): void
     +toggleSilencio(): void
     +update(float): void
 }
 
 ' ================================
-' ESTRUCTURAS Y ENUMS
+' ESTRUCTURAS Y ENUMS (SIN CAMBIOS)
 ' ================================
 
 enum GameState <<Enum>> {
@@ -172,12 +219,20 @@ enum AudioState <<Enum>> {
     TRANSITIONING
 }
 
+enum BodyType <<Enum>> {
+    PLAYER
+    ENEMY
+    PLATFORM
+    WALL
+}
+
 class PhysicalPlatform {
     +shape: sf::RectangleShape
     +floorSprite: sf::Sprite
     +physicsBody: b2Body*
     +position: sf::Vector2f
     +size: sf::Vector2f
+    +color: sf::Color
     +hasTexture: bool
 }
 
@@ -195,56 +250,49 @@ class PhysicsBody {
 }
 
 class PhysicsContactListener {
-    -m_groundContacts: unordered_map<void*, int>
+    -groundContacts: unordered_map<void*, int>
     --
     +BeginContact(b2Contact*): void
     +EndContact(b2Contact*): void
     +isPlayerOnGround(void*): bool
+    +updateGroundContacts(): void
 }
 
 ' ================================
-' RELACIONES USANDO SÍMBOLOS UML ESTÁNDAR
+' RELACIONES USANDO SÍMBOLOS UML ESTÁNDAR CORRECTOS
 ' ================================
 
-' CGame - COMPOSICIONES (la parte no puede existir sin el todo)
-CGame *-- CPlayer : "tiene"
-CGame *-- CPhysics : "posee"  
-CGame *-- CMusica : "controla"
-CGame *-- "1..*" CLevel : "maneja"
-
-' CGame - DEPENDENCIAS DÉBILES (usa temporalmente)
-CGame ..> GameState : "usa"
-
-' CPlayer - DEPENDENCIAS (utiliza otros objetos)
-CPlayer --> "1" b2Body : "usa cuerpo"
-CPlayer ..> CPhysics : "usa"
-CPlayer ..> PlayerState : "tiene estado"
-
-' CEnemy - DEPENDENCIAS (utiliza otros objetos)
-CEnemy --> "1" b2Body : "usa cuerpo"
-CEnemy ..> CPhysics : "usa"
-CEnemy ..> EnemyType : "es tipo"
-CEnemy ..> EnemyState : "tiene estado"
-
-' CLevel - COMPOSICIONES Y AGREGACIONES
+' COMPOSICIONES (*--): La parte no puede existir sin el todo
+CGame *-- "1" CPlayer : "posee"
+CGame *-- "1" CPhysics : "posee"  
+CGame *-- "1" CMusica : "posee"
+CGame *-- "1..*" CLevel : "contiene"
 CLevel *-- "0..*" CEnemy : "contiene"
-CLevel *-- "0..*" PhysicalPlatform : "tiene"
-CLevel o-- "0..*" SpawnPoint : "tiene puntos"
-CLevel ..> CPhysics : "usa"
-CLevel ..> LevelState : "tiene estado"
-
-' CPhysics - COMPOSICIONES (posee completamente)
-CPhysics *-- PhysicsContactListener : "contiene"
+CLevel *-- "0..*" PhysicalPlatform : "contiene"
+CPhysics *-- "1" PhysicsContactListener : "contiene"
 CPhysics *-- "0..*" PhysicsBody : "maneja"
-CPhysics *-- "1" b2World : "posee mundo"
 
-' CMusica - DEPENDENCIAS Y ASOCIACIONES
-CMusica ..> MusicType : "reproduce tipo"
-CMusica ..> AudioState : "tiene estado"
+' AGREGACIONES (o--): La parte puede existir independientemente
+CLevel o-- "0..*" SpawnPoint : "tiene puntos de spawn"
+
+' DEPENDENCIAS (-->): El objeto utiliza otro objeto
+CPlayer --> "0..1" b2Body : "usa cuerpo físico"
+CEnemy --> "0..1" b2Body : "usa cuerpo físico"
+PhysicalPlatform --> "0..1" b2Body : "referencia"
 CMusica --> "2" sf::Music : "maneja pistas"
 
-' Estructuras auxiliares - DEPENDENCIAS
-PhysicalPlatform --> "1" b2Body : "usa cuerpo"
+' DEPENDENCIAS DÉBILES (..>): Uso temporal o indirecto
+CGame ..> GameState : "usa"
+CPlayer ..> CPhysics : "utiliza servicios"
+CPlayer ..> PlayerState : "maneja estado"
+CEnemy ..> CPhysics : "utiliza servicios"
+CEnemy ..> EnemyType : "es de tipo"
+CEnemy ..> EnemyState : "maneja estado"
+CLevel ..> CPhysics : "utiliza servicios"
+CLevel ..> LevelState : "maneja estado"
+CMusica ..> MusicType : "reproduce tipo"
+CMusica ..> AudioState : "maneja estado"
 SpawnPoint ..> EnemyType : "spawea tipo"
+PhysicsBody ..> BodyType : "es de tipo"
 
 @enduml

@@ -23,33 +23,33 @@ enum class AudioState {
 class CMusica {
 private:
     // Objetos de música SFML
-    sf::Music m_menuMusic;
-    sf::Music m_gameplayMusic;
+    sf::Music menuMusic;
+    sf::Music gameplayMusic;
     
     // Estado del sistema de audio
-    MusicType m_currentMusicType;
-    AudioState m_audioState;
-    sf::Music* m_currentMusic;
+    MusicType currentMusicType;
+    AudioState audioState;
+    sf::Music* currentMusic;
     
     // Configuración de volumen
-    float m_masterVolume;
-    float m_musicVolume;
-    bool m_isMuted;
+    float masterVolume;
+    float musicVolume;
+    bool muted;
     
     // Sistema de transiciones suaves
-    bool m_fadeEnabled;
-    float m_fadeTimer;
-    float m_fadeDuration;
-    float m_fadeStartVolume;
-    float m_fadeTargetVolume;
-    MusicType m_transitionTarget;
+    bool fadeEnabled;
+    float fadeTimer;
+    float fadeDuration;
+    float fadeStartVolume;
+    float fadeTargetVolume;
+    MusicType transitionTarget;
     
     // Archivos de música
-    std::string m_menuMusicFile;
-    std::string m_gameplayMusicFile;
+    std::string menuMusicFile;
+    std::string gameplayMusicFile;
     
     // Estado de carga
-    bool m_musicLoaded;
+    bool musicLoaded;
     
 public:
     // Constructor y Destructor

@@ -10,29 +10,29 @@ class CPhysics;  // Forward declaration
 class CPlayer {
 private:
     // Atributos del jugador
-    std::string m_name;
-    int m_health;
-    int m_maxHealth;
-    sf::Vector2f m_position;
-    float m_speed;
+    std::string name;
+    int health;
+    int maxHealth;
+    sf::Vector2f position;
+    float speed;
     
     // ===================================
     // NUEVO: Sistema de físicas
     // ===================================
-    CPhysics* m_physics;              // Referencia al sistema de físicas
-    b2Body* m_physicsBody;            // Cuerpo físico del jugador
-    bool m_physicsEnabled;            // Si las físicas están activas
-    bool m_isGrounded;                // Si está en el suelo
-    float m_jumpForce;                // Fuerza de salto
+    CPhysics* physics;              // Referencia al sistema de físicas
+    b2Body* physicsBody;            // Cuerpo físico del jugador
+    bool physicsEnabled;            // Si las físicas están activas
+    bool grounded;                  // Si está en el suelo
+    float jumpForce;                // Fuerza de salto
     
     // Gráficos SFML (fallback)
-    sf::RectangleShape m_sprite;
-    sf::Color m_color;
+    sf::RectangleShape sprite;
+    sf::Color color;
     
     // Texturas y sprites
-    sf::Texture m_characterTexture;    // Sprite sheet completo del personaje
-    sf::Sprite m_playerSprite;
-    bool m_texturesLoaded;
+    sf::Texture characterTexture;    // Sprite sheet completo del personaje
+    sf::Sprite playerSprite;
+    bool texturesLoaded;
     
     // Sistema de animación
     enum class PlayerState {
@@ -44,14 +44,14 @@ private:
         FALLING                       // ← NUEVO: Estado de caída
     };
     
-    PlayerState m_currentState;
-    int m_currentFrame;
-    float m_animationTimer;
-    float m_animationSpeed;
+    PlayerState currentState;
+    int currentFrame;
+    float animationTimer;
+    float animationSpeed;
     
     // Variables para el estado HURT
-    float m_hurtTimer;
-    bool m_isHurt;
+    float hurtTimer;
+    bool hurt;
     
     // ==============================================
     // CONFIGURACIÓN MANUAL DE SPRITES - Character.png

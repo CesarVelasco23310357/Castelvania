@@ -23,58 +23,58 @@ enum class GameState {
 class CGame {
 private:
     // SFML Core
-    sf::RenderWindow m_window;
-    sf::Clock m_clock;
-    sf::Font m_font;
+    sf::RenderWindow window;
+    sf::Clock clock;
+    sf::Font font;
     
     // Game State
-    GameState m_gameState;
-    bool m_isRunning;
-    bool m_fontLoaded;
+    GameState gameState;
+    bool running;
+    bool fontLoaded;
     
     // Game Objects
-    std::unique_ptr<CPlayer> m_player;
-    std::vector<std::unique_ptr<CLevel>> m_levels;
-    int m_currentLevelIndex;
+    std::unique_ptr<CPlayer> player;
+    std::vector<std::unique_ptr<CLevel>> levels;
+    int currentLevelIndex;
     
     // ===================================
     // Sistema de físicas Box2D
     // ===================================
-    std::unique_ptr<CPhysics> m_physics;
+    std::unique_ptr<CPhysics> physics;
     
     // ===================================
     // NUEVO: Sistema de música
     // ===================================
-    std::unique_ptr<CMusica> m_musica;
+    std::unique_ptr<CMusica> musica;
     
     // Input handling
-    bool m_keyPressed[sf::Keyboard::KeyCount];
-    float m_inputCooldown;
+    bool keyPressed[sf::Keyboard::KeyCount];
+    float inputCooldown;
     
     // Game settings
-    float m_playerSpeed;
-    float m_jumpForce;        // Fuerza de salto del jugador
-    float m_attackRange;
-    int m_attackDamage;
+    float playerSpeed;
+    float jumpForce;        // Fuerza de salto del jugador
+    float attackRange;
+    int attackDamage;
     
     // UI Elements
-    sf::Text m_titleText;
-    sf::Text m_statusText;
-    sf::Text m_instructionsText;
-    sf::Text m_levelText;
-    sf::Text m_healthText;
-    sf::Text m_scoreText;
-    sf::Texture m_titleScreenTexture;           // ← NUEVA: Textura de la pantalla de título
-    sf::Sprite m_titleScreenSprite;             // ← NUEVA: Sprite de la pantalla de título
+    sf::Text titleText;
+    sf::Text statusText;
+    sf::Text instructionsText;
+    sf::Text levelText;
+    sf::Text healthText;
+    sf::Text scoreText;
+    sf::Texture titleScreenTexture;           // ← NUEVA: Textura de la pantalla de título
+    sf::Sprite titleScreenSprite;             // ← NUEVA: Sprite de la pantalla de título
 
     // Game statistics
-    int m_totalScore;
-    int m_levelsCompleted;
-    float m_totalPlayTime;
+    int totalScore;
+    int levelsCompleted;
+    float totalPlayTime;
     
     // Visual effects
-    sf::RectangleShape m_healthBar;
-    sf::RectangleShape m_healthBarBackground;
+    sf::RectangleShape healthBar;
+    sf::RectangleShape healthBarBackground;
     
 public:
     // Constructor y Destructor

@@ -7,14 +7,14 @@
 
 // Constructor
 CLevel::CLevel(int levelNumber) 
-    : m_levelNumber(levelNumber), m_state(LevelState::LOADING),
-      m_physics(nullptr),        
-      m_levelSize(800.0f, 600.0f), m_levelTime(0.0f), m_spawnTimer(0.0f),
-      m_totalEnemies(0), m_enemiesKilled(0), m_texturesLoaded(false),
-      m_isLoaded(false), m_completionTime(0.0f) {
+    : levelNumber(levelNumber), state(LevelState::LOADING),
+      physics(nullptr),        
+      levelSize(800.0f, 600.0f), levelTime(0.0f), spawnTimer(0.0f),
+      totalEnemies(0), enemiesKilled(0), texturesLoaded(false),
+      loaded(false), completionTime(0.0f) {
     
-    m_levelName = "Nivel " + std::to_string(levelNumber);
-    m_boundaries = sf::FloatRect(0.0f, 0.0f, m_levelSize.x, m_levelSize.y);
+    levelName = "Nivel " + std::to_string(levelNumber);
+    boundaries = sf::FloatRect(0.0f, 0.0f, levelSize.x, levelSize.y);
 }
 
 // Destructor
@@ -27,40 +27,40 @@ CLevel::~CLevel() {
 
 // GETTERS
 int CLevel::getLevelNumber() const {
-    return m_levelNumber;
+    return levelNumber;
 }
 
 const std::string& CLevel::getLevelName() const {
-    return m_levelName;
+    return levelName;
 }
 
 LevelState CLevel::getState() const {
-    return m_state;
+    return state;
 }
 
 sf::Vector2f CLevel::getLevelSize() const {
-    return m_levelSize;
+    return levelSize;
 }
 
 sf::FloatRect CLevel::getBoundaries() const {
-    return m_boundaries;
+    return boundaries;
 }
 
 float CLevel::getLevelTime() const {
-    return m_levelTime;
+    return levelTime;
 }
 
 int CLevel::getTotalEnemies() const {
-    return m_totalEnemies;
+    return totalEnemies;
 }
 
 int CLevel::getEnemiesKilled() const {
-    return m_enemiesKilled;
+    return enemiesKilled;
 }
 
 int CLevel::getEnemiesAlive() const {
     int aliveCount = 0;
-    for (const auto& enemy : m_enemies) {
+    for (const auto& enemy : enemies) {
         if (enemy && enemy->isAlive()) {
             aliveCount++;
         }
@@ -69,41 +69,41 @@ int CLevel::getEnemiesAlive() const {
 }
 
 float CLevel::getCompletionPercentage() const {
-    if (m_totalEnemies == 0) return 100.0f;
-    return (static_cast<float>(m_enemiesKilled) / static_cast<float>(m_totalEnemies)) * 100.0f;
+    if (totalEnemies == 0) return 100.0f;
+    return (static_cast<float>(enemiesKilled) / static_cast<float>(totalEnemies)) * 100.0f;
 }
 
 bool CLevel::isLoaded() const {
-    return m_isLoaded;
+    return loaded;
 }
 
 bool CLevel::isCompleted() const {
-    return m_state == LevelState::COMPLETED;
+    return state == LevelState::COMPLETED;
 }
 
 const std::vector<PhysicalPlatform>& CLevel::getPlatforms() const {
-    return m_platforms;
+    return platforms;
 }
 
 size_t CLevel::getPlatformCount() const {
-    return m_platforms.size();
+    return platforms.size();
 }
 
 // SETTERS
 void CLevel::setState(LevelState state) {
-    if (m_state != state) {
-        m_state = state;
+    if (this->state != state) {
+        this->state = state;
         
         if (state == LevelState::COMPLETED) {
-            m_completionTime = m_levelTime;
+            completionTime = levelTime;
         }
     }
 }
 
 void CLevel::setLevelSize(float width, float height) {
-    m_levelSize.x = width;
-    m_levelSize.y = height;
-    m_boundaries = sf::FloatRect(0.0f, 0.0f, width, height);
+    levelSize.x = width;
+    levelSize.y = height;
+    boundaries = sf::FloatRect(0.0f, 0.0f, width, height);
     createLevelGeometry();
 }
 
@@ -113,7 +113,7 @@ void CLevel::initializePhysics(CPhysics* physics) {
         return;
     }
     
-    m_physics = physics;
+    this->physics = physics;
     
     // Crear plataformas fisicas especificas del nivel
     createPhysicalPlatforms();
@@ -123,7 +123,7 @@ void CLevel::initializePhysics(CPhysics* physics) {
 }
 
 void CLevel::createPhysicalPlatforms() {
-    if (!m_physics) {
+    if (!physics) {
         std::cerr << "Error: No se puede crear plataformas sin sistema de fisicas" << std::endl;
         return;
     }
@@ -136,7 +136,7 @@ void CLevel::createPhysicalPlatforms() {
 }
 
 void CLevel::createLevelBoundaries() {
-    if (!m_physics) return;
+    if (!physics) return;
     
     // Limpiar limites existentes
     destroyLevelBoundaries();
@@ -145,29 +145,29 @@ void CLevel::createLevelBoundaries() {
     float wallThickness = 10.0f;  // Mas delgados
     
     // Muro izquierdo (fuera de pantalla)
-    b2Body* leftWall = m_physics->createWall(-wallThickness, 0.0f, wallThickness, m_levelSize.y);
-    if (leftWall) m_wallBodies.push_back(leftWall);
+    b2Body* leftWall = physics->createWall(-wallThickness, 0.0f, wallThickness, levelSize.y);
+    if (leftWall) wallBodies.push_back(leftWall);
     
     // Muro derecho (fuera de pantalla)
-    b2Body* rightWall = m_physics->createWall(m_levelSize.x, 0.0f, wallThickness, m_levelSize.y);
-    if (rightWall) m_wallBodies.push_back(rightWall);
+    b2Body* rightWall = physics->createWall(levelSize.x, 0.0f, wallThickness, levelSize.y);
+    if (rightWall) wallBodies.push_back(rightWall);
 }
 
 // GESTION DEL NIVEL
 void CLevel::loadLevel() {
-    if (m_isLoaded) {
+    if (loaded) {
         return;
     }
     
     // Limpiar datos anteriores
-    m_enemies.clear();
-    m_spawnPoints.clear();
-    m_obstacles.clear();
+    enemies.clear();
+    spawnPoints.clear();
+    obstacles.clear();
     
     // Resetear contadores
-    m_levelTime = 0.0f;
-    m_spawnTimer = 0.0f;
-    m_enemiesKilled = 0;
+    levelTime = 0.0f;
+    spawnTimer = 0.0f;
+    enemiesKilled = 0;
     
     // Configurar nivel especifico
     setupLevelConfiguration();
@@ -179,27 +179,27 @@ void CLevel::loadLevel() {
     createLevelGeometry();
     
     // Crear plataformas fisicas si ya hay sistema de fisicas
-    if (m_physics) {
+    if (physics) {
         createPhysicalPlatforms();
         createLevelBoundaries();
     }
     
-    m_isLoaded = true;
+    loaded = true;
     setState(LevelState::ACTIVE);
 }
 
 void CLevel::unloadLevel() {
-    if (!m_isLoaded) return;
+    if (!loaded) return;
     
-    m_enemies.clear();
-    m_spawnPoints.clear();
-    m_obstacles.clear();
+    enemies.clear();
+    spawnPoints.clear();
+    obstacles.clear();
     
     // Limpiar plataformas fisicas
     destroyPhysicalPlatforms();
     destroyLevelBoundaries();
     
-    m_isLoaded = false;
+    loaded = false;
     setState(LevelState::LOADING);
 }
 
@@ -209,7 +209,7 @@ void CLevel::resetLevel() {
 }
 
 void CLevel::startLevel() {
-    if (m_state == LevelState::LOADING) {
+    if (state == LevelState::LOADING) {
         loadLevel();
     }
     setState(LevelState::ACTIVE);
@@ -220,36 +220,36 @@ void CLevel::addEnemy(EnemyType type, float x, float y) {
     auto enemy = std::make_unique<CEnemy>(type, x, y);
     
     // Inicializar fisicas del enemigo si el sistema esta disponible
-    if (m_physics) {
-        enemy->initializePhysics(m_physics);
+    if (physics) {
+        enemy->initializePhysics(physics);
     }
     
-    m_enemies.push_back(std::move(enemy));
+    enemies.push_back(std::move(enemy));
 }
 
 void CLevel::addSpawnPoint(float x, float y, EnemyType type, float spawnTime) {
-    m_spawnPoints.emplace_back(x, y, type, spawnTime);
-    m_totalEnemies++;
+    spawnPoints.emplace_back(x, y, type, spawnTime);
+    totalEnemies++;
 }
 
 void CLevel::removeDeadEnemies() {
-    auto it = std::remove_if(m_enemies.begin(), m_enemies.end(),
+    auto it = std::remove_if(enemies.begin(), enemies.end(),
         [this](const std::unique_ptr<CEnemy>& enemy) {
             if (enemy && !enemy->isAlive()) {
-                m_enemiesKilled++;
+                enemiesKilled++;
                 return true;
             }
             return false;
         });
     
-    m_enemies.erase(it, m_enemies.end());
+    enemies.erase(it, enemies.end());
 }
 
 CEnemy* CLevel::getClosestEnemyToPosition(const sf::Vector2f& position, float maxRange) {
     CEnemy* closestEnemy = nullptr;
     float closestDistance = maxRange > 0 ? maxRange : std::numeric_limits<float>::max();
     
-    for (const auto& enemy : m_enemies) {
+    for (const auto& enemy : enemies) {
         if (enemy && enemy->isAlive()) {
             float distance = std::sqrt(
                 std::pow(enemy->getPosition().x - position.x, 2) +
@@ -267,7 +267,7 @@ CEnemy* CLevel::getClosestEnemyToPosition(const sf::Vector2f& position, float ma
 }
 
 void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf::Color color) {
-    if (!m_physics) {
+    if (!physics) {
         std::cerr << "Error: No se puede agregar plataforma sin sistema de fisicas" << std::endl;
         return;
     }
@@ -276,7 +276,7 @@ void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf
     PhysicalPlatform platform(x, y, width, height, color);
     
     // PASO 2: CONFIGURAR SPRITE VISUAL MAS GRUESO
-    if (m_floorTexture.getSize().x > 0) {
+    if (floorTexture.getSize().x > 0) {
         // HACER LA PARTE VISUAL MAS GRUESA HACIA ABAJO
         float visualThickness = 40.0f;  // Grosor visual fijo (puedes cambiar este valor)
         
@@ -284,13 +284,13 @@ void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf
         float finalVisualHeight = std::max(height, visualThickness);
         
         // Configurar sprite con textura
-        platform.floorSprite.setTexture(m_floorTexture);
+        platform.floorSprite.setTexture(floorTexture);
         
         // POSICIONAR: La parte SUPERIOR del visual coincide con la fisica
         platform.floorSprite.setPosition(x, y);  // Misma posicion superior
         
         // ESCALAR: Ajustar a nuevo tamano visual
-        sf::Vector2u textureSize = m_floorTexture.getSize(); // 336x112
+        sf::Vector2u textureSize = floorTexture.getSize(); // 336x112
         float scaleX = width / textureSize.x;                // Ancho igual
         float scaleY = finalVisualHeight / textureSize.y;    // Altura aumentada
         
@@ -318,10 +318,10 @@ void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf
     }
     
     // PASO 3: CREAR CUERPO FISICO (TAMANO ORIGINAL - NO CAMBIAR)
-    platform.physicsBody = m_physics->createPlatform(x, y, width, height);  // Fisica original
+    platform.physicsBody = physics->createPlatform(x, y, width, height);  // Fisica original
     
     if (platform.physicsBody) {
-        m_platforms.push_back(platform);
+        platforms.push_back(platform);
     } else {
         std::cerr << "ERROR: No se pudo crear cuerpo fisico" << std::endl;
     }
@@ -330,7 +330,7 @@ void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf
 void CLevel::clearPhysicalPlatforms() {
     // No necesitamos destruir los cuerpos manualmente aqui porque
     // CPhysics se encarga de eso cuando se destruye el mundo
-    m_platforms.clear();
+    platforms.clear();
 }
 
 // GESTION DE OBSTACULOS (solo visuales, sin fisicas)
@@ -342,15 +342,15 @@ void CLevel::addObstacle(float x, float y, float width, float height) {
     obstacle.setOutlineThickness(2.0f);
     obstacle.setOutlineColor(sf::Color::Black);
     
-    m_obstacles.push_back(obstacle);
+    obstacles.push_back(obstacle);
 }
 
 void CLevel::clearObstacles() {
-    m_obstacles.clear();
+    obstacles.clear();
 }
 
 bool CLevel::isPositionBlocked(const sf::Vector2f& position) const {
-    for (const auto& obstacle : m_obstacles) {
+    for (const auto& obstacle : obstacles) {
         if (obstacle.getGlobalBounds().contains(position)) {
             return true;
         }
@@ -360,15 +360,15 @@ bool CLevel::isPositionBlocked(const sf::Vector2f& position) const {
 
 // VERIFICACIONES
 bool CLevel::isPositionInBounds(const sf::Vector2f& position) const {
-    return m_boundaries.contains(position);
+    return boundaries.contains(position);
 }
 
 void CLevel::checkLevelCompletion() {
-    if (m_state != LevelState::ACTIVE) return;
+    if (state != LevelState::ACTIVE) return;
     
     // Verificar si todos los enemigos han sido spawneados
     bool allSpawned = true;
-    for (const auto& spawnPoint : m_spawnPoints) {
+    for (const auto& spawnPoint : spawnPoints) {
         if (!spawnPoint.hasSpawned) {
             allSpawned = false;
             break;
@@ -383,9 +383,9 @@ void CLevel::checkLevelCompletion() {
 
 // METODOS SFML
 void CLevel::update(float deltaTime, const sf::Vector2f& playerPosition) {
-    if (m_state != LevelState::ACTIVE) return;
+    if (state != LevelState::ACTIVE) return;
     
-    m_levelTime += deltaTime;
+    levelTime += deltaTime;
     
     // Spawn enemigos segun tiempo
     spawnEnemiesFromPoints(deltaTime);
@@ -401,14 +401,14 @@ void CLevel::update(float deltaTime, const sf::Vector2f& playerPosition) {
 }
 
 void CLevel::render(sf::RenderWindow& window) {
-    if (!m_isLoaded) return;
+    if (!loaded) return;
     
     // Renderizar fondos
-    if (m_texturesLoaded) {
-        window.draw(m_layer1Sprite);
-        window.draw(m_layer2Sprite);
+    if (texturesLoaded) {
+        window.draw(layer1Sprite);
+        window.draw(layer2Sprite);
     } else {
-        window.draw(m_background);
+        window.draw(background);
     }
     
     // Renderizar plataformas con texturas
@@ -421,11 +421,11 @@ void CLevel::render(sf::RenderWindow& window) {
     renderEnemies(window);
     
     // Renderizar borde del nivel
-    window.draw(m_border);
+    window.draw(border);
 }
 
 void CLevel::renderPlatforms(sf::RenderWindow& window) {
-    for (const auto& platform : m_platforms) {
+    for (const auto& platform : platforms) {
         if (platform.hasTexture) {
             // Renderizar con textura de floor.png
             window.draw(platform.floorSprite);
@@ -439,29 +439,29 @@ void CLevel::renderPlatforms(sf::RenderWindow& window) {
 // DEBUG
 void CLevel::printLevelInfo() const {
     std::cout << "=== Informacion del Nivel ===" << std::endl;
-    std::cout << "Numero: " << m_levelNumber << std::endl;
-    std::cout << "Nombre: " << m_levelName << std::endl;
-    std::cout << "Estado: " << levelStateToString(m_state) << std::endl;
-    std::cout << "Tiempo: " << m_levelTime << "s" << std::endl;
-    std::cout << "Tamano: " << m_levelSize.x << "x" << m_levelSize.y << std::endl;
-    std::cout << "Enemigos totales: " << m_totalEnemies << std::endl;
-    std::cout << "Enemigos eliminados: " << m_enemiesKilled << std::endl;
+    std::cout << "Numero: " << levelNumber << std::endl;
+    std::cout << "Nombre: " << levelName << std::endl;
+    std::cout << "Estado: " << levelStateToString(state) << std::endl;
+    std::cout << "Tiempo: " << levelTime << "s" << std::endl;
+    std::cout << "Tamano: " << levelSize.x << "x" << levelSize.y << std::endl;
+    std::cout << "Enemigos totales: " << totalEnemies << std::endl;
+    std::cout << "Enemigos eliminados: " << enemiesKilled << std::endl;
     std::cout << "Enemigos vivos: " << getEnemiesAlive() << std::endl;
     std::cout << "Progreso: " << getCompletionPercentage() << "%" << std::endl;
     std::cout << "===========================" << std::endl;
 }
 
 void CLevel::printEnemyCount() const {
-    std::cout << "Enemigos en " << m_levelName << ": " 
+    std::cout << "Enemigos en " << levelName << ": " 
               << getEnemiesAlive() << " vivos, " 
-              << m_enemiesKilled << " eliminados" << std::endl;
+              << enemiesKilled << " eliminados" << std::endl;
 }
 
 void CLevel::printPhysicsInfo() const {
-    if (!m_platforms.empty()) {
+    if (!platforms.empty()) {
         std::cout << "--- Detalle de plataformas ---" << std::endl;
-        for (size_t i = 0; i < m_platforms.size(); i++) {
-            const auto& platform = m_platforms[i];
+        for (size_t i = 0; i < platforms.size(); i++) {
+            const auto& platform = platforms[i];
             std::cout << "  " << (i+1) << ". Pos: (" << platform.position.x << "," << platform.position.y 
                       << ") Tamano: " << platform.size.x << "x" << platform.size.y << std::endl;
         }
@@ -470,7 +470,7 @@ void CLevel::printPhysicsInfo() const {
 
 // METODOS PRIVADOS
 void CLevel::setupLevelConfiguration() {
-    switch (m_levelNumber) {
+    switch (levelNumber) {
         case 1:
             configureLevel1();
             break;
@@ -488,65 +488,65 @@ void CLevel::setupLevelConfiguration() {
 
 void CLevel::createLevelGeometry() {
     // Si las texturas estan cargadas, usar sprites; si no, usar rectangulos de color
-    if (m_texturesLoaded) {
+    if (texturesLoaded) {
         // Configurar sprites de fondo
-        m_layer1Sprite.setTexture(m_layer1Texture);
-        m_layer2Sprite.setTexture(m_layer2Texture);
+        layer1Sprite.setTexture(layer1Texture);
+        layer2Sprite.setTexture(layer2Texture);
         
         // Escalar las imagenes para que cubran toda la pantalla
-        sf::Vector2u layer1Size = m_layer1Texture.getSize();
-        sf::Vector2u layer2Size = m_layer2Texture.getSize();
+        sf::Vector2u layer1Size = layer1Texture.getSize();
+        sf::Vector2u layer2Size = layer2Texture.getSize();
         
-        float scaleX1 = m_levelSize.x / layer1Size.x;
-        float scaleY1 = m_levelSize.y / layer1Size.y;
-        m_layer1Sprite.setScale(scaleX1, scaleY1);
+        float scaleX1 = levelSize.x / layer1Size.x;
+        float scaleY1 = levelSize.y / layer1Size.y;
+        layer1Sprite.setScale(scaleX1, scaleY1);
         
-        float scaleX2 = m_levelSize.x / layer2Size.x;
-        float scaleY2 = m_levelSize.y / layer2Size.y;
-        m_layer2Sprite.setScale(scaleX2, scaleY2);
+        float scaleX2 = levelSize.x / layer2Size.x;
+        float scaleY2 = levelSize.y / layer2Size.y;
+        layer2Sprite.setScale(scaleX2, scaleY2);
         
     } else {
         // Fallback: configurar fondo de color solido MAS VISIBLE
-        m_background.setSize(m_levelSize);
-        m_background.setPosition(0.0f, 0.0f);
-        m_background.setFillColor(sf::Color(50, 50, 100)); // Azul oscuro mas visible
+        background.setSize(levelSize);
+        background.setPosition(0.0f, 0.0f);
+        background.setFillColor(sf::Color(50, 50, 100)); // Azul oscuro mas visible
     }
     
     // Configurar borde
-    m_border.setSize(m_levelSize);
-    m_border.setPosition(0.0f, 0.0f);
-    m_border.setFillColor(sf::Color::Transparent);
-    m_border.setOutlineThickness(4.0f);
-    m_border.setOutlineColor(sf::Color::Yellow);
+    border.setSize(levelSize);
+    border.setPosition(0.0f, 0.0f);
+    border.setFillColor(sf::Color::Transparent);
+    border.setOutlineThickness(4.0f);
+    border.setOutlineColor(sf::Color::Yellow);
 }
 
 void CLevel::loadLevelTextures() {
-    m_texturesLoaded = true; // Assume success, set to false if any fails
+    texturesLoaded = true; // Assume success, set to false if any fails
     
     // CARGAR TEXTURA DEL SUELO/PLATAFORMAS
-    if (!m_floorTexture.loadFromFile("assets/floor.png")) {
+    if (!floorTexture.loadFromFile("assets/floor.png")) {
         std::cerr << "Error: No se pudo cargar assets/floor.png" << std::endl;
-        m_texturesLoaded = false;
+        texturesLoaded = false;
     }
     
     // Cargar layer 1 (fondo lejano)
-    if (!m_layer1Texture.loadFromFile("assets/layer_1.png")) {
+    if (!layer1Texture.loadFromFile("assets/layer_1.png")) {
         std::cerr << "Error: No se pudo cargar assets/layer_1.png" << std::endl;
-        m_texturesLoaded = false;
+        texturesLoaded = false;
     }
     
     // Cargar layer 2 (fondo cercano)
-    if (!m_layer2Texture.loadFromFile("assets/layer_2.png")) {
+    if (!layer2Texture.loadFromFile("assets/layer_2.png")) {
         std::cerr << "Error: No se pudo cargar assets/layer_2.png" << std::endl;
-        m_texturesLoaded = false;
+        texturesLoaded = false;
     }
 }
 
 void CLevel::spawnEnemiesFromPoints(float deltaTime) {
-    m_spawnTimer += deltaTime;
+    spawnTimer += deltaTime;
     
-    for (auto& spawnPoint : m_spawnPoints) {
-        if (!spawnPoint.hasSpawned && m_spawnTimer >= spawnPoint.spawnTime) {
+    for (auto& spawnPoint : spawnPoints) {
+        if (!spawnPoint.hasSpawned && spawnTimer >= spawnPoint.spawnTime) {
             addEnemy(spawnPoint.enemyType, spawnPoint.position.x, spawnPoint.position.y);
             spawnPoint.hasSpawned = true;
         }
@@ -554,13 +554,13 @@ void CLevel::spawnEnemiesFromPoints(float deltaTime) {
 }
 
 void CLevel::updateEnemies(float deltaTime, const sf::Vector2f& playerPosition) {
-    for (auto& enemy : m_enemies) {
+    for (auto& enemy : enemies) {
         if (enemy && enemy->isAlive()) {
             enemy->updateAI(playerPosition, deltaTime);
             enemy->update(deltaTime);
             
             // Sincronizar posicion del enemigo con fisicas
-            if (m_physics) {
+            if (physics) {
                 enemy->syncPositionFromPhysics();
             }
         }
@@ -568,7 +568,7 @@ void CLevel::updateEnemies(float deltaTime, const sf::Vector2f& playerPosition) 
 }
 
 void CLevel::renderEnemies(sf::RenderWindow& window) {
-    for (const auto& enemy : m_enemies) {
+    for (const auto& enemy : enemies) {
         if (enemy && enemy->isAlive()) {
             enemy->render(window);
         }
@@ -576,7 +576,7 @@ void CLevel::renderEnemies(sf::RenderWindow& window) {
 }
 
 void CLevel::renderObstacles(sf::RenderWindow& window) {
-    for (const auto& obstacle : m_obstacles) {
+    for (const auto& obstacle : obstacles) {
         window.draw(obstacle);
     }
 }
@@ -592,7 +592,7 @@ std::string CLevel::levelStateToString(LevelState state) const {
 }
 
 void CLevel::setupPhysicalPlatformsForLevel() {
-    switch (m_levelNumber) {
+    switch (levelNumber) {
         case 1:
             configurePlatformsLevel1();
             break;
@@ -612,19 +612,19 @@ void CLevel::setupPhysicalPlatformsForLevel() {
 
 void CLevel::destroyPhysicalPlatforms() {
     // Limpiar plataformas visuales y fisicas
-    for (auto& platform : m_platforms) {
-        if (platform.physicsBody && m_physics) {
+    for (auto& platform : platforms) {
+        if (platform.physicsBody && physics) {
             // Destruir cuerpo fisico especificamente
-            m_physics->destroyBody(platform.physicsBody);
+            physics->destroyBody(platform.physicsBody);
         }
     }
     
-    m_platforms.clear();
+    platforms.clear();
 }
 
 void CLevel::destroyLevelBoundaries() {
     // Los cuerpos se destruyen automaticamente con el mundo de Box2D
-    m_wallBodies.clear();
+    wallBodies.clear();
 }
 
 // CONFIGURACIONES ESPECIFICAS POR NIVEL
@@ -673,10 +673,10 @@ void CLevel::configureLevel3() {
 }
 
 void CLevel::configureDefaultLevel() {
-    m_levelName = "Nivel " + std::to_string(m_levelNumber) + " - Generado";
+    levelName = "Nivel " + std::to_string(levelNumber) + " - Generado";
     
     // Configuracion escalable basada en el numero de nivel
-    int numEnemies = 2 + m_levelNumber;
+    int numEnemies = 2 + levelNumber;
     
     for (int i = 0; i < numEnemies; i++) {
         float x = 100.0f + std::fmod((i * 150.0f), 600.0f);
@@ -688,7 +688,7 @@ void CLevel::configureDefaultLevel() {
     }
     
     // Algunos obstaculos aleatorios
-    for (int i = 0; i < m_levelNumber; i++) {
+    for (int i = 0; i < levelNumber; i++) {
         float x = 200.0f + std::fmod((i * 200.0f), 400.0f);
         float y = 200.0f + std::fmod((i * 100.0f), 200.0f);
         addObstacle(x, y, 60.0f, 60.0f);
@@ -746,11 +746,11 @@ void CLevel::configurePlatformsLevel3() {
 }
 
 void CLevel::adjustPlatformThickness(float deltaThickness) {
-    for (auto& platform : m_platforms) {
-        if (platform.hasTexture && m_floorTexture.getSize().x > 0) {
+    for (auto& platform : platforms) {
+        if (platform.hasTexture && floorTexture.getSize().x > 0) {
             // Ajustar escala Y del sprite
             sf::Vector2f currentScale = platform.floorSprite.getScale();
-            sf::Vector2u textureSize = m_floorTexture.getSize();
+            sf::Vector2u textureSize = floorTexture.getSize();
             
             // Calcular nueva altura visual
             float currentVisualHeight = currentScale.y * textureSize.y;

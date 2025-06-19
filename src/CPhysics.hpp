@@ -37,7 +37,7 @@ struct PhysicsBody {
 // ===============================================
 class PhysicsContactListener : public b2ContactListener {
 private:
-    std::unordered_map<void*, int> m_groundContacts; // Conteo de contactos con el suelo por jugador
+    std::unordered_map<void*, int> groundContacts; // Conteo de contactos con el suelo por jugador
     
 public:
     void BeginContact(b2Contact* contact) override;
@@ -52,13 +52,13 @@ private:
 
 class CPhysics {
 private:
-    std::unique_ptr<b2World> m_world;
-    std::unordered_map<void*, PhysicsBody> m_bodies;
+    std::unique_ptr<b2World> world;
+    std::unordered_map<void*, PhysicsBody> bodies;
     
     // ===============================================
     // NUEVO: ContactListener para detectar colisiones
     // ===============================================
-    std::unique_ptr<PhysicsContactListener> m_contactListener;
+    std::unique_ptr<PhysicsContactListener> contactListener;
     
     // ===============================================
     // CORREGIDO: Configuración del mundo mejorada

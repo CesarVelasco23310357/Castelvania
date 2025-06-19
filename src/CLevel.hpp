@@ -52,47 +52,47 @@ struct PhysicalPlatform {
 class CLevel {
 private:
     // Información del nivel
-    int m_levelNumber;
-    std::string m_levelName;
-    LevelState m_state;
+    int levelNumber;
+    std::string levelName;
+    LevelState state;
     
     // ===================================
     // NUEVO: Sistema de físicas
     // ===================================
-    CPhysics* m_physics;                         // Referencia al sistema de físicas
-    std::vector<PhysicalPlatform> m_platforms;   // Plataformas con físicas
-    std::vector<b2Body*> m_wallBodies;          // Muros invisibles (límites)
+    CPhysics* physics;                         // Referencia al sistema de físicas
+    std::vector<PhysicalPlatform> platforms;   // Plataformas con físicas
+    std::vector<b2Body*> wallBodies;          // Muros invisibles (límites)
     
     // Dimensiones y límites
-    sf::Vector2f m_levelSize;
-    sf::FloatRect m_boundaries;
+    sf::Vector2f levelSize;
+    sf::FloatRect boundaries;
     
     // Enemigos y spawn points
-    std::vector<std::unique_ptr<CEnemy>> m_enemies;
-    std::vector<SpawnPoint> m_spawnPoints;
+    std::vector<std::unique_ptr<CEnemy>> enemies;
+    std::vector<SpawnPoint> spawnPoints;
     
     // Tiempo y progreso
-    float m_levelTime;
-    float m_spawnTimer;
-    int m_totalEnemies;
-    int m_enemiesKilled;
+    float levelTime;
+    float spawnTimer;
+    int totalEnemies;
+    int enemiesKilled;
     
     // Gráficos del nivel
-    sf::RectangleShape m_background;
-    sf::RectangleShape m_border;
-    std::vector<sf::RectangleShape> m_obstacles;  // Obstáculos visuales (sin físicas)
+    sf::RectangleShape background;
+    sf::RectangleShape border;
+    std::vector<sf::RectangleShape> obstacles;  // Obstáculos visuales (sin físicas)
     
     // Texturas y sprites para fondos
-    sf::Texture m_layer1Texture;
-    sf::Texture m_layer2Texture;
-    sf::Sprite m_layer1Sprite;
-    sf::Sprite m_layer2Sprite;
-    sf::Texture m_floorTexture;
-    bool m_texturesLoaded;
+    sf::Texture layer1Texture;
+    sf::Texture layer2Texture;
+    sf::Sprite layer1Sprite;
+    sf::Sprite layer2Sprite;
+    sf::Texture floorTexture;
+    bool texturesLoaded;
     
     // Configuración
-    bool m_isLoaded;
-    float m_completionTime;
+    bool loaded;
+    float completionTime;
     
 public:
     // Constructor y destructor

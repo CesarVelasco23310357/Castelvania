@@ -158,6 +158,21 @@ CASTELVANIA/
 └── README.md
 ```
 
+### 📊 Diagrama UML - Arquitectura del Sistema
+
+![Diagrama UML](assets/Diagrama.png)
+
+El diagrama UML muestra las relaciones entre las clases principales del sistema:
+
+- **CGame**: Clase central que orquesta todo el juego, manteniendo referencias a todos los subsistemas
+- **CPlayer**: Hereda de la clase base de entidades y maneja la lógica específica del jugador
+- **CEnemy**: Sistema de enemigos con diferentes tipos (murciélago, esqueleto, zombie)
+- **CLevel**: Gestiona la estructura de cada nivel, plataformas y spawning de enemigos
+- **CPhysics**: Wrapper para Box2D que maneja todas las interacciones físicas
+- **CMusica**: Sistema independiente de audio con control completo de la experiencia sonora
+
+Las flechas indican las dependencias y relaciones entre clases, mostrando cómo fluye la información y el control a través del sistema.
+
 ### 🔧 Clases Principales
 
 #### `CGame`

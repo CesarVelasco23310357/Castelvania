@@ -29,7 +29,7 @@ Castelvania es un juego de plataformas desarrollado en C++ que combina acción, 
 - Sistema de salud para jugador y enemigos
 - Efectos visuales de daño y estados hurt
 
-### 🤖 **Inteligencia Artificial Avanzada**
+### 🤖 **IA para enemigos**
 - **Murciélagos**: IA de vuelo que persigue al jugador en 3D
 - **Esqueletos**: Saltan obstáculos y persiguen agresivamente  
 - **Zombies**: Movimiento persistente y patrullaje inteligente

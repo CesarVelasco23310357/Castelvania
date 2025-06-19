@@ -447,7 +447,7 @@ void CGame::adjustPlatformOffset(float offsetX, float offsetY) {
         sf::Vector2f currentPos = platform.floorSprite.getPosition();
         platform.floorSprite.setPosition(currentPos.x + offsetX, currentPos.y + offsetY);
         
-        // También mover el shape de respaldo
+        // Tambien mover el shape de respaldo
         sf::Vector2f currentShapePos = platform.shape.getPosition();
         platform.shape.setPosition(currentShapePos.x + offsetX, currentShapePos.y + offsetY);
     }
@@ -512,13 +512,13 @@ void CGame::checkPlayerEnemyCollisions() {
     if (closestEnemy && closestEnemy->isAlive() && 
         closestEnemy->getBounds().intersects(playerBounds)) {
         
-        // Verificar que no estemos ya en estado hurt para evitar spam de daño
+        // Verificar que no estemos ya en estado hurt para evitar spam de dano
         if (!m_player->isHurt()) {
             int damage = closestEnemy->attack();
             if (damage > 0) {
                 m_player->takeDamage(damage);
                 
-                // Añadir un pequeño cooldown para evitar daño continuo
+                // Anadir un pequeno cooldown para evitar dano continuo
                 m_inputCooldown = 0.5f; // 0.5 segundos de cooldown
             }
         }
@@ -665,7 +665,7 @@ void CGame::handleMusicInput() {
         m_musica->setMasterVolumen(currentVolume - 10.0f);
     }
     
-    // F9 = Debug de música
+    // F9 = Debug de musica
     if (isKeyJustPressed(sf::Keyboard::F9)) {
         printMusicInfo();
     }
@@ -687,19 +687,19 @@ void CGame::handleMusicStateChanges() {
                 break;
                 
             case GameState::PLAYING:
-                // Cambiar a música del gameplay
+                // Cambiar a musica del gameplay
                 if (m_musica->getCurrentMusicType() != MusicType::GAMEPLAY) {
                     m_musica->fadeToGameplayMusic(1.5f);
                 }
                 break;
                 
             case GameState::PAUSED:
-                // Pausar música actual
+                // Pausar musica actual
                 m_musica->pauseMusic();
                 break;
                 
             case GameState::LEVEL_COMPLETED:
-                // Mantener música del gameplay pero bajar volumen
+                // Mantener musica del gameplay pero bajar volumen
                 // (opcional - puedes quitar esto si no lo quieres)
                 break;
         }
@@ -969,7 +969,7 @@ void CGame::renderMenu() {
     centerText(m_titleText, 450.0f);
     m_window.draw(m_titleText);
     
-    // Instrucciones de controles (MODIFICADO para incluir música)
+    // Instrucciones de controles (MODIFICADO para incluir musica)
     m_statusText.setString("A/D = Mover | W/ESPACIO = Saltar | ENTER = Atacar | M = Musica | +/- = Volumen");
     m_statusText.setCharacterSize(16);
     m_statusText.setFillColor(sf::Color::Yellow);
@@ -1113,7 +1113,7 @@ void CGame::renderHUD() {
 }
 
 void CGame::renderPhysicsDebug() {
-    // Este método se puede usar para renderizar informacion de debug de fisicas
+    // Este metodo se puede usar para renderizar informacion de debug de fisicas
     // Por ejemplo, dibujar los contornos de los cuerpos fisicos
     if (m_physics) {
         // Implementar visualizacion de debug si es necesario

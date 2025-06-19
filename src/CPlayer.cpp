@@ -6,11 +6,11 @@
 CPlayer::CPlayer(const std::string& name) 
     : m_name(name), m_health(100), m_maxHealth(100), 
       m_position(0.0f, 0.0f), m_speed(150.0f), m_color(sf::Color::Blue),
-      m_physics(nullptr),           // ← NUEVO: Referencia al sistema de fisicas
-      m_physicsBody(nullptr),       // ← NUEVO: Cuerpo fisico
-      m_physicsEnabled(false),      // ← NUEVO: Estado de fisicas
-      m_isGrounded(false),          // ← NUEVO: Estado en el suelo
-      m_jumpForce(DEFAULT_JUMP_FORCE), // ← NUEVO: Fuerza de salto
+      m_physics(nullptr),           // Referencia al sistema de fisicas
+      m_physicsBody(nullptr),       // Cuerpo fisico
+      m_physicsEnabled(false),      // Estado de fisicas
+      m_isGrounded(false),          // Estado en el suelo
+      m_jumpForce(DEFAULT_JUMP_FORCE), // Fuerza de salto
       m_texturesLoaded(false), m_currentState(PlayerState::IDLE),
       m_currentFrame(0), m_animationTimer(0.0f), m_animationSpeed(IDLE_ANIMATION_SPEED),
       m_hurtTimer(0.0f), m_isHurt(false) {
@@ -59,9 +59,7 @@ sf::FloatRect CPlayer::getBounds() const {
     return m_sprite.getGlobalBounds();
 }
 
-// ===================================
-// NUEVO: Getters para fisicas
-// ===================================
+// Getters para fisicas
 bool CPlayer::isGrounded() const {
     return m_isGrounded;
 }
@@ -93,7 +91,7 @@ void CPlayer::setPosition(float x, float y) {
     m_position.y = y;
     m_sprite.setPosition(m_position);
     
-    // También actualizar sprite con textura si esta cargada
+    // Tambien actualizar sprite con textura si esta cargada
     if (m_texturesLoaded) {
         m_playerSprite.setPosition(m_position);
     }
@@ -103,7 +101,7 @@ void CPlayer::setPosition(const sf::Vector2f& position) {
     m_position = position;
     m_sprite.setPosition(m_position);
     
-    // También actualizar sprite con textura si esta cargada
+    // Tambien actualizar sprite con textura si esta cargada
     if (m_texturesLoaded) {
         m_playerSprite.setPosition(m_position);
     }
@@ -125,18 +123,14 @@ void CPlayer::setSpeed(float speed) {
     }
 }
 
-// ===================================
-// NUEVO: Setter para fuerza de salto
-// ===================================
+// Setter para fuerza de salto
 void CPlayer::setJumpForce(float force) {
     if (force > 0) {
         m_jumpForce = force;
     }
 }
 
-// ===================================
-// NUEVO: Inicializar fisicas del jugador
-// ===================================
+// Inicializar fisicas del jugador
 void CPlayer::initializePhysics(CPhysics* physics) {
     m_physics = physics;
     
@@ -145,27 +139,24 @@ void CPlayer::initializePhysics(CPhysics* physics) {
     
     if (m_physicsBody) {
         m_physicsEnabled = true;
-        std::cout << " Cuerpo fisico del jugador creado exitosamente" << std::endl;
         
         // Configurar propiedades iniciales
         updatePhysicsPosition();
     } else {
-        std::cerr << " Error: No se pudo crear el cuerpo fisico del jugador" << std::endl;
+        std::cerr << "Error: No se pudo crear el cuerpo fisico del jugador" << std::endl;
         m_physicsEnabled = false;
     }
 }
 
-// ===================================
-// NUEVO: Sincronizar posición desde fisicas
-// ===================================
+// Sincronizar posicion desde fisicas
 void CPlayer::syncPositionFromPhysics() {
     if (!m_physicsEnabled || !m_physicsBody) return;
     
-    // Obtener posición del cuerpo fisico
+    // Obtener posicion del cuerpo fisico
     b2Vec2 physicsPos = m_physicsBody->GetPosition();
     sf::Vector2f newPos = CPhysics::metersToPixels(physicsPos);
     
-    // Actualizar posición visual
+    // Actualizar posicion visual
     m_position = newPos;
     m_sprite.setPosition(m_position);
     
@@ -177,20 +168,16 @@ void CPlayer::syncPositionFromPhysics() {
     updatePhysicsState();
 }
 
-// ===================================
-// NUEVO: Actualizar posición en fisicas
-// ===================================
+// Actualizar posicion en fisicas
 void CPlayer::updatePhysicsPosition() {
     if (!m_physicsEnabled || !m_physicsBody) return;
     
-    // Convertir posición visual a fisicas
+    // Convertir posicion visual a fisicas
     b2Vec2 physicsPos = CPhysics::sfmlVecToB2(m_position);
     m_physicsBody->SetTransform(physicsPos, m_physicsBody->GetAngle());
 }
 
-// ===================================================
-// MÉTODOS PARA CONFIGURAR SPRITES MANUALMENTE
-// ===================================================
+// METODOS PARA CONFIGURAR SPRITES MANUALMENTE
 
 void CPlayer::setIdleSprite(int startX, int startY, int frameWidth, int frameHeight, int frameCount) {
     std::cout << "Configurando IDLE sprite: (" << startX << "," << startY << ") " 
@@ -212,7 +199,7 @@ void CPlayer::setHurtSprite(int startX, int startY, int frameWidth, int frameHei
               << frameWidth << "x" << frameHeight << " [" << frameCount << " frames]" << std::endl;
 }
 
-// MÉTODOS DE GAMEPLAY
+// METODOS DE GAMEPLAY
 void CPlayer::move(float deltaX, float deltaY) {
     // No permitir movimiento si esta en estado hurt
     if (m_currentState == PlayerState::HURT) {
@@ -223,7 +210,7 @@ void CPlayer::move(float deltaX, float deltaY) {
     m_position.y += deltaY;
     m_sprite.setPosition(m_position);
     
-    // También actualizar sprite con textura si esta cargada
+    // Tambien actualizar sprite con textura si esta cargada
     if (m_texturesLoaded) {
         m_playerSprite.setPosition(m_position);
     }
@@ -234,9 +221,7 @@ void CPlayer::move(float deltaX, float deltaY) {
     }
 }
 
-// ===================================
-// NUEVO: Movimiento con fisicas
-// ===================================
+// Movimiento con fisicas
 void CPlayer::moveWithPhysics(float direction) {
     if (!m_physicsEnabled || !m_physicsBody) {
         // Fallback al movimiento tradicional
@@ -260,13 +245,11 @@ void CPlayer::moveWithPhysics(float direction) {
         m_physics->applyForce(this, force, 0.0f);
     }
     
-    // Actualizar estado de animación
+    // Actualizar estado de animacion
     updateAnimationFromPhysics();
 }
 
-// ===================================
-// NUEVO: Saltar
-// ===================================
+// Saltar
 void CPlayer::jump() {
     
     // No permitir salto si esta en estado hurt
@@ -278,7 +261,7 @@ void CPlayer::jump() {
     // Aplicar impulso hacia arriba
     m_physics->applyImpulse(this, 0.0f, -m_jumpForce);
     
-    // Cambiar estado de animación
+    // Cambiar estado de animacion
     startJump();
     m_isGrounded = false; // Se actualizara en checkGroundState()
     
@@ -337,15 +320,13 @@ void CPlayer::startHurt() {
     m_hurtTimer = HURT_DURATION;
     m_isHurt = true;
     
-    // Forzar actualización del sprite inmediatamente
+    // Forzar actualizacion del sprite inmediatamente
     if (m_texturesLoaded) {
         updateSpriteFrame();
     }
 }
 
-// ===================================
-// NUEVO: Iniciar animación de salto
-// ===================================
+// Iniciar animacion de salto
 void CPlayer::startJump() {
     m_currentState = PlayerState::JUMPING;
     m_currentFrame = 0;
@@ -353,9 +334,7 @@ void CPlayer::startJump() {
     m_animationSpeed = JUMP_ANIMATION_SPEED;
 }
 
-// ===================================
-// NUEVO: Iniciar animación de caida
-// ===================================
+// Iniciar animacion de caida
 void CPlayer::startFall() {
     m_currentState = PlayerState::FALLING;
     m_currentFrame = 0;
@@ -374,10 +353,10 @@ void CPlayer::takeDamage(int damage) {
             m_health = 0;
         }
         
-        std::cout << m_name << " recibe " << damage << " de daño. Salud: " 
+        std::cout << m_name << " recibe " << damage << " de dano. Salud: " 
                   << m_health << "/" << m_maxHealth << "\n";
         
-        // *** ACTIVAR ESTADO HURT AL RECIBIR DAÑO ***
+        // ACTIVAR ESTADO HURT AL RECIBIR DANO
         if (m_health > 0) {
             startHurt(); 
         } else {
@@ -391,9 +370,7 @@ bool CPlayer::isAlive() const {
     return m_health > 0;
 }
 
-// ===================================
-// NUEVO: Verificar si esta en el suelo
-// ===================================
+// Verificar si esta en el suelo
 void CPlayer::checkGroundState() {
     if (!m_physicsEnabled || !m_physicsBody) {
         m_isGrounded = true; // Asumir que esta en el suelo sin fisicas
@@ -403,13 +380,11 @@ void CPlayer::checkGroundState() {
     // Verificar velocidad vertical
     b2Vec2 velocity = m_physicsBody->GetLinearVelocity();
     
-    // Esta en el suelo si la velocidad vertical es muy pequeña
+    // Esta en el suelo si la velocidad vertical es muy pequenia
     m_isGrounded = std::abs(velocity.y) < 0.5f;
 }
 
-// ===================================
-// NUEVO: Actualizar estado basado en fisicas
-// ===================================
+// Actualizar estado basado en fisicas
 void CPlayer::updatePhysicsState() {
     if (!m_physicsEnabled) return;
     
@@ -417,20 +392,18 @@ void CPlayer::updatePhysicsState() {
     updateAnimationFromPhysics();
 }
 
-// ===================================
-// NUEVO: Actualizar animación basada en fisicas
-// ===================================
+// Actualizar animacion basada en fisicas
 void CPlayer::updateAnimationFromPhysics() {
     if (!m_physicsEnabled || !m_physicsBody) return;
     
-    // No cambiar animación si esta herido o atacando
+    // No cambiar animacion si esta herido o atacando
     if (m_currentState == PlayerState::HURT || m_currentState == PlayerState::ATTACKING) {
         return;
     }
     
     b2Vec2 velocity = m_physicsBody->GetLinearVelocity();
     
-    // Determinar estado basado en velocidad y posición
+    // Determinar estado basado en velocidad y posicion
     if (!m_isGrounded) {
         if (velocity.y < -0.5f) {
             // Subiendo (saltando)
@@ -446,7 +419,7 @@ void CPlayer::updateAnimationFromPhysics() {
     } else {
         // En el suelo
         if (std::abs(velocity.x) > 0.5f) {
-            // Moviéndose horizontalmente
+            // Moviendose horizontalmente
             setRunning(true);
         } else {
             // Parado
@@ -455,9 +428,7 @@ void CPlayer::updateAnimationFromPhysics() {
     }
 }
 
-// ===================================
-// NUEVO: Limitar velocidad horizontal
-// ===================================
+// Limitar velocidad horizontal
 void CPlayer::limitHorizontalVelocity() {
     if (!m_physicsEnabled || !m_physicsBody) return;
     
@@ -469,9 +440,9 @@ void CPlayer::limitHorizontalVelocity() {
     }
 }
 
-// MÉTODOS SFML
+// METODOS SFML
 void CPlayer::update(float deltaTime) {
-    // *** ACTUALIZAR TIMER DE HURT ***
+    // ACTUALIZAR TIMER DE HURT
     if (m_isHurt) {
         m_hurtTimer -= deltaTime;
         if (m_hurtTimer <= 0.0f) {
@@ -484,16 +455,16 @@ void CPlayer::update(float deltaTime) {
         }
     }
     
-    // *** NUEVO: Actualizar estado fisico ***
+    // Actualizar estado fisico
     if (m_physicsEnabled) {
         updatePhysicsState();
         limitHorizontalVelocity();
     }
     
-    // *** ACTUALIZAR ANIMACIÓN ***
+    // Actualizar animacion
     updateAnimation(deltaTime);
     
-    // Restaurar color original después de recibir daño (para el fallback)
+    // Restaurar color original despues de recibir dano (para el fallback)
     if (isAlive() && m_sprite.getFillColor() == sf::Color::Red) {
         m_sprite.setFillColor(m_color);
     }
@@ -502,7 +473,7 @@ void CPlayer::update(float deltaTime) {
 void CPlayer::render(sf::RenderWindow& window) {
     if (isAlive()) {
         if (m_texturesLoaded) {
-            // Renderizar con textura y animación
+            // Renderizar con textura y animacion
             window.draw(m_playerSprite);
         } else {
             // Fallback: renderizar rectangulo de color
@@ -516,11 +487,11 @@ void CPlayer::printStatus() const {
     std::cout << "=== Estado del Jugador ===\n";
     std::cout << "Nombre: " << m_name << "\n";
     std::cout << "Salud: " << m_health << "/" << m_maxHealth << "\n";
-    std::cout << "Posición: (" << m_position.x << ", " << m_position.y << ")\n";
+    std::cout << "Posicion: (" << m_position.x << ", " << m_position.y << ")\n";
     std::cout << "Velocidad: " << m_speed << "\n";
     std::cout << "Estado: " << (isAlive() ? "Vivo" : "Muerto") << "\n";
     std::cout << "Texturas: " << (m_texturesLoaded ? "Cargadas" : "No cargadas") << "\n";
-    std::cout << "Animación: ";
+    std::cout << "Animacion: ";
     switch(m_currentState) {
         case PlayerState::IDLE: std::cout << "Idle"; break;
         case PlayerState::RUNNING: std::cout << "Corriendo"; break;
@@ -537,24 +508,24 @@ void CPlayer::printStatus() const {
 }
 
 void CPlayer::printSpriteConfig() const {
-    std::cout << "========== CONFIGURACIÓN DE SPRITES ==========\n";
+    std::cout << "========== CONFIGURACION DE SPRITES ==========\n";
     std::cout << "IDLE:   (" << IDLE_START_X << "," << IDLE_START_Y << ") " 
-              << IDLE_FRAME_WIDTH << "x" << IDLE_FRAME_HEIGHT << " [" << IDLE_FRAME_COUNT << " frame - ESTaTICO]\n";
+              << IDLE_FRAME_WIDTH << "x" << IDLE_FRAME_HEIGHT << " [" << IDLE_FRAME_COUNT << " frame - ESTATICO]\n";
     std::cout << "RUN:    (" << RUN_START_X << "," << RUN_START_Y << ") " 
               << RUN_FRAME_WIDTH << "x" << RUN_FRAME_HEIGHT << " [" << RUN_FRAME_COUNT << " frames - ANIMADO]\n";
     std::cout << "ATTACK: (" << ATTACK_START_X << "," << ATTACK_START_Y << ") " 
               << ATTACK_FRAME_WIDTH << "x" << ATTACK_FRAME_HEIGHT << " [" << ATTACK_FRAME_COUNT << " frames - ANIMADO]\n";
     std::cout << "HURT:   (" << HURT_START_X << "," << HURT_START_Y << ") " 
-              << HURT_FRAME_WIDTH << "x" << HURT_FRAME_HEIGHT << " [" << HURT_FRAME_COUNT << " frame - ESTaTICO]\n";
+              << HURT_FRAME_WIDTH << "x" << HURT_FRAME_HEIGHT << " [" << HURT_FRAME_COUNT << " frame - ESTATICO]\n";
     std::cout << "JUMP:   (" << JUMP_START_X << "," << JUMP_START_Y << ") " 
-              << JUMP_FRAME_WIDTH << "x" << JUMP_FRAME_HEIGHT << " [" << JUMP_FRAME_COUNT << " frame - ESTaTICO]\n";
+              << JUMP_FRAME_WIDTH << "x" << JUMP_FRAME_HEIGHT << " [" << JUMP_FRAME_COUNT << " frame - ESTATICO]\n";
     std::cout << "FALL:   (" << FALL_START_X << "," << FALL_START_Y << ") " 
-              << FALL_FRAME_WIDTH << "x" << FALL_FRAME_HEIGHT << " [" << FALL_FRAME_COUNT << " frame - ESTaTICO]\n";
+              << FALL_FRAME_WIDTH << "x" << FALL_FRAME_HEIGHT << " [" << FALL_FRAME_COUNT << " frame - ESTATICO]\n";
     std::cout << "==============================================\n";
 }
 
 void CPlayer::debugCurrentFrame() const {
-    std::cout << "🔍 DEBUG FRAME ACTUAL:" << std::endl;
+    std::cout << "DEBUG FRAME ACTUAL:" << std::endl;
     std::cout << "   Estado: ";
     switch(m_currentState) {
         case PlayerState::IDLE: std::cout << "IDLE"; break;
@@ -578,11 +549,9 @@ void CPlayer::debugCurrentFrame() const {
     }
 }
 
-// ===================================
-// NUEVO: Debug de fisicas
-// ===================================
+// Debug de fisicas
 void CPlayer::printPhysicsStatus() const {
-    std::cout << "=== FiSICAS DEL JUGADOR ===" << std::endl;
+    std::cout << "=== FISICAS DEL JUGADOR ===" << std::endl;
     std::cout << "Fisicas habilitadas: " << (m_physicsEnabled ? "Si" : "NO") << std::endl;
     std::cout << "En el suelo: " << (m_isGrounded ? "Si" : "NO") << std::endl;
     std::cout << "Fuerza de salto: " << m_jumpForce << std::endl;
@@ -591,23 +560,21 @@ void CPlayer::printPhysicsStatus() const {
         b2Vec2 pos = m_physicsBody->GetPosition();
         b2Vec2 vel = m_physicsBody->GetLinearVelocity();
         
-        std::cout << "Posición fisica: (" << pos.x << ", " << pos.y << ") metros" << std::endl;
+        std::cout << "Posicion fisica: (" << pos.x << ", " << pos.y << ") metros" << std::endl;
         std::cout << "Velocidad: (" << vel.x << ", " << vel.y << ") m/s" << std::endl;
         
         sf::Vector2f pixelPos = CPhysics::metersToPixels(pos);
-        std::cout << "Posición en pixeles: (" << pixelPos.x << ", " << pixelPos.y << ")" << std::endl;
+        std::cout << "Posicion en pixeles: (" << pixelPos.x << ", " << pixelPos.y << ")" << std::endl;
     }
     
     std::cout << "==========================" << std::endl;
 }
 
-// MÉTODOS PRIVADOS
+// METODOS PRIVADOS
 void CPlayer::loadPlayerTextures() {
     
     
-    // ===================================================
     // CARGAR CHARACTER.PNG - Sprite sheet completo
-    // ===================================================
     std::cout << "Intentando cargar: assets/Character.png" << std::endl;
     if (!m_characterTexture.loadFromFile("assets/Character.png")) {
         std::cerr << "Error: No se pudo cargar assets/Character.png" << std::endl;
@@ -617,9 +584,7 @@ void CPlayer::loadPlayerTextures() {
     
     sf::Vector2u sheetSize = m_characterTexture.getSize();
     
-    // ===================================================
     // CONFIGURAR SPRITE INICIAL
-    // ===================================================
     m_texturesLoaded = true;
     
     // Configurar sprite inicial con textura del sprite sheet
@@ -633,13 +598,11 @@ void CPlayer::updateAnimation(float deltaTime) {
     
     m_animationTimer += deltaTime;
     
-    // ===================================================
-    // ACTUALIZAR FRAME DE ANIMACIÓN
-    // ===================================================
+    // ACTUALIZAR FRAME DE ANIMACION
     if (m_animationTimer >= m_animationSpeed) {
         m_animationTimer = 0.0f;
         
-        // Avanzar frame según el estado actual
+        // Avanzar frame segun el estado actual
         switch (m_currentState) {
             case PlayerState::IDLE:
                 // IDLE es estatico - siempre frame 0
@@ -653,7 +616,7 @@ void CPlayer::updateAnimation(float deltaTime) {
             case PlayerState::ATTACKING:
                 m_currentFrame++;
                 if (m_currentFrame >= ATTACK_FRAME_COUNT) {
-                    // Fin de animación de ataque, volver a idle
+                    // Fin de animacion de ataque, volver a idle
                     m_currentState = PlayerState::IDLE;
                     m_currentFrame = 0;
                     m_animationSpeed = IDLE_ANIMATION_SPEED;
@@ -665,7 +628,7 @@ void CPlayer::updateAnimation(float deltaTime) {
                 m_currentFrame = 0;
                 break;
                 
-            // *** NUEVO: Estados de salto y caida ***
+            // Estados de salto y caida
             case PlayerState::JUMPING:
                 // JUMP es estatico - siempre frame 0
                 m_currentFrame = 0;
@@ -684,23 +647,19 @@ void CPlayer::updateAnimation(float deltaTime) {
 void CPlayer::updateSpriteFrame() {
     if (!m_texturesLoaded) return;
     
-    // ===================================================
-    // CONFIGURAR RECTaNGULO DE RECORTE DEL SPRITE SHEET
-    // ===================================================
+    // CONFIGURAR RECTANGULO DE RECORTE DEL SPRITE SHEET
     sf::IntRect frameRect = getCurrentFrameRect();
     m_playerSprite.setTextureRect(frameRect);
 }
 
 sf::IntRect CPlayer::getCurrentFrameRect() const {
-    // ===================================================
-    // CALCULAR POSICIÓN EN EL SPRITE SHEET CON COORDENADAS MANUALES
-    // Cada animación puede estar en cualquier parte de la imagen
-    // ===================================================
+    // CALCULAR POSICION EN EL SPRITE SHEET CON COORDENADAS MANUALES
+    // Cada animacion puede estar en cualquier parte de la imagen
     
     int startX = 0, startY = 0;
     int frameWidth = 0, frameHeight = 0;
     
-    // Determinar coordenadas de inicio y dimensiones según el estado actual
+    // Determinar coordenadas de inicio y dimensiones segun el estado actual
     switch (m_currentState) {
         case PlayerState::IDLE:
             startX = IDLE_START_X;
@@ -730,7 +689,7 @@ sf::IntRect CPlayer::getCurrentFrameRect() const {
             frameHeight = HURT_FRAME_HEIGHT;
             break;
             
-        // *** NUEVO: Estados de salto y caida ***
+        // Estados de salto y caida
         case PlayerState::JUMPING:
             startX = JUMP_START_X;
             startY = JUMP_START_Y;
@@ -754,12 +713,10 @@ sf::IntRect CPlayer::getCurrentFrameRect() const {
             break;
     }
     
-    // ===================================================
     // CALCULAR COORDENADAS DEL FRAME ACTUAL
-    // NUEVA FÓRMULA: x = startX + (frame * frameWidth), y = startY
-    // ===================================================
-    int x = startX + (m_currentFrame * frameWidth);   // Posición horizontal desde el inicio
-    int y = startY;                                   // Posición vertical fija (inicio Y)
+    // NUEVA FORMULA: x = startX + (frame * frameWidth), y = startY
+    int x = startX + (m_currentFrame * frameWidth);   // Posicion horizontal desde el inicio
+    int y = startY;                                   // Posicion vertical fija (inicio Y)
     
     return sf::IntRect(x, y, frameWidth, frameHeight);
 }

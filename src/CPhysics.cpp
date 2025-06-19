@@ -9,13 +9,9 @@ CPhysics::CPhysics() {
     b2Vec2 gravity(GRAVITY_X, GRAVITY_Y);
     m_world = std::make_unique<b2World>(gravity);
     
-    // ===================================
-    // NUEVO: Configurar listener de contactos
-    // ===================================
+    // Configurar listener de contactos
     m_contactListener = std::make_unique<PhysicsContactListener>();
     m_world->SetContactListener(m_contactListener.get());
-    
-    std::cout << "Mundo fisico creado con gravedad: (" << GRAVITY_X << ", " << GRAVITY_Y << ")" << std::endl;
 }
 
 // Destructor
@@ -23,7 +19,7 @@ CPhysics::~CPhysics() {
     cleanup();
 }
 
-// GESTIoN DEL MUNDO FiSICO
+// GESTION DEL MUNDO FISICO
 void CPhysics::update(float deltaTime) {
     if (!m_world) return;
     
@@ -39,15 +35,12 @@ void CPhysics::update(float deltaTime) {
 void CPhysics::setGravity(float x, float y) {
     if (m_world) {
         m_world->SetGravity(b2Vec2(x, y));
-        std::cout << "Gravedad cambiada a: (" << x << ", " << y << ")" << std::endl;
     }
 }
 
-// CREACIoN DE CUERPOS
+// CREACION DE CUERPOS
 b2Body* CPhysics::createPlayerBody(float x, float y, void* userData) {
     if (!m_world) return nullptr;
-    
-    std::cout << "Creando cuerpo fisico del jugador en (" << x << ", " << y << ")" << std::endl;
     
     // Definicion del cuerpo
     b2BodyDef bodyDef;
@@ -78,7 +71,6 @@ b2Body* CPhysics::createPlayerBody(float x, float y, void* userData) {
     // Almacenar informacion del cuerpo
     m_bodies.emplace(userData, PhysicsBody(body, BodyType::PLAYER, userData));
     
-    std::cout << "✅ Cuerpo del jugador creado (dinamico, sin rotacion)" << std::endl;
     return body;
 }
 
@@ -117,44 +109,32 @@ b2Body* CPhysics::createEnemyBody(float x, float y, void* userData) {
     return body;
 }
 
-// ===============================================
-// CORREGIDO: Metodo createPlatform completamente arreglado
-// ===============================================
+// Metodo createPlatform corregido
 b2Body* CPhysics::createPlatform(float x, float y, float width, float height) {
     if (!m_world) return nullptr;
 
-    // ===================================
     // PASO 1: CALCULAR CENTRO EXACTO DE LA PLATAFORMA VISUAL
-    // ===================================
     float centerX = x + (width / 2.0f);
     float centerY = y + (height / 2.0f);
     
-    // ===================================
     // PASO 2: CONVERTIR A COORDENADAS DE BOX2D (METROS)
-    // ===================================
     float centerX_meters = pixelsToMeters(centerX);
     float centerY_meters = pixelsToMeters(centerY);
     float width_meters = pixelsToMeters(width);
     float height_meters = pixelsToMeters(height);
     
-    // ===================================
-    // PASO 3: CREAR CUERPO FiSICO EN LA POSICIoN EXACTA
-    // ===================================
+    // PASO 3: CREAR CUERPO FISICO EN LA POSICION EXACTA
     b2BodyDef bodyDef;
     bodyDef.type = b2_staticBody;
     bodyDef.position.Set(centerX_meters, centerY_meters);
     
     b2Body* body = m_world->CreateBody(&bodyDef);
     
-    // ===================================
-    // PASO 4: CREAR FORMA CON TAMAÑO EXACTO
-    // ===================================
+    // PASO 4: CREAR FORMA CON TAMANO EXACTO
     b2PolygonShape shape;
     shape.SetAsBox(width_meters / 2.0f, height_meters / 2.0f);
     
-    // ===================================
-    // PASO 5: PROPIEDADES FiSICAS OPTIMIZADAS
-    // ===================================
+    // PASO 5: PROPIEDADES FISICAS OPTIMIZADAS
     b2FixtureDef fixtureDef;
     fixtureDef.shape = &shape;
     fixtureDef.density = 0.0f;        
@@ -164,19 +144,6 @@ b2Body* CPhysics::createPlatform(float x, float y, float width, float height) {
     fixtureDef.filter.maskBits = CATEGORY_PLAYER | CATEGORY_ENEMY;
     
     body->CreateFixture(&fixtureDef);
-    
-    // ===================================
-    // PASO 6: VERIFICACIoN DE SINCRONIZACIoN
-    // ===================================
-    // Convertir de vuelta para verificar
-    b2Vec2 physicsPos = body->GetPosition();
-    float verifyX = metersToPixels(physicsPos.x) - (width / 2.0f);
-    float verifyY = metersToPixels(physicsPos.y) - (height / 2.0f);
-    
-    std::cout << "   VERIFICACIoN:" << std::endl;
-    std::cout << "      Visual esperada: (" << x << "," << y << ")" << std::endl;
-    std::cout << "      Fisica calculada: (" << verifyX << "," << verifyY << ")" << std::endl;
-    std::cout << "      Diferencia: (" << std::abs(x - verifyX) << "," << std::abs(y - verifyY) << ") pixeles" << std::endl;
 
     // Almacenar informacion del cuerpo
     m_bodies.emplace(body, PhysicsBody(body, BodyType::PLATFORM, nullptr));
@@ -220,7 +187,7 @@ b2Body* CPhysics::createWall(float x, float y, float width, float height) {
     return body;
 }
 
-// GESTIoN DE CUERPOS
+// GESTION DE CUERPOS
 void CPhysics::destroyBody(void* userData) {
     auto it = m_bodies.find(userData);
     if (it != m_bodies.end() && m_world) {
@@ -233,9 +200,9 @@ b2Body* CPhysics::getBody(void* userData) {
     auto it = m_bodies.find(userData);
     return (it != m_bodies.end()) ? it->second.body : nullptr;
 }
+
 void CPhysics::destroyBody(b2Body* body) {
     if (!body || !m_world) return;
-    
     
     // Buscar en el mapa y eliminar
     for (auto it = m_bodies.begin(); it != m_bodies.end(); ++it) {
@@ -248,12 +215,13 @@ void CPhysics::destroyBody(b2Body* body) {
     // Destruir el cuerpo
     m_world->DestroyBody(body);
 }
+
 PhysicsBody* CPhysics::getPhysicsBody(void* userData) {
     auto it = m_bodies.find(userData);
     return (it != m_bodies.end()) ? &it->second : nullptr;
 }
 
-// UTILIDADES DE CONVERSIoN
+// UTILIDADES DE CONVERSION
 sf::Vector2f CPhysics::b2VecToSFML(const b2Vec2& vec) {
     return sf::Vector2f(metersToPixels(vec.x), metersToPixels(vec.y));
 }
@@ -300,9 +268,7 @@ void CPhysics::applyImpulse(void* userData, float x, float y) {
     }
 }
 
-// ===============================================
-// CORREGIDO: Verificacion mejorada de estar en el suelo
-// ===============================================
+// Verificacion mejorada de estar en el suelo
 bool CPhysics::isBodyOnGround(void* userData) {
     if (!m_contactListener) return false;
     
@@ -314,9 +280,7 @@ bool CPhysics::canJump(void* userData) {
     return isBodyOnGround(userData);
 }
 
-// ===============================================
-// NUEVO: Sistema de contactos
-// ===============================================
+// Sistema de contactos
 PhysicsContactListener* CPhysics::getContactListener() const {
     return m_contactListener.get();
 }
@@ -345,15 +309,13 @@ void CPhysics::debugPrint() const {
         b2Vec2 gravity = m_world->GetGravity();
         std::cout << "  Gravedad: (" << gravity.x << ", " << gravity.y << ")" << std::endl;
     }
-
-    std::cout << "=======================================" << std::endl;
 }
 
 int CPhysics::getBodyCount() const {
     return static_cast<int>(m_bodies.size());
 }
 
-// MeTODOS AUXILIARES PRIVADOS
+// METODOS AUXILIARES PRIVADOS
 b2BodyDef CPhysics::createBodyDef(float x, float y, b2BodyType type) {
     b2BodyDef bodyDef;
     bodyDef.type = type;
@@ -378,13 +340,10 @@ void CPhysics::cleanup() {
         m_bodies.clear();
         m_world.reset();
         m_contactListener.reset();
-        std::cout << "Mundo fisico limpiado" << std::endl;
     }
 }
 
-// ===============================================
-// NUEVO: Implementacion del ContactListener
-// ===============================================
+// Implementacion del ContactListener
 void PhysicsContactListener::BeginContact(b2Contact* contact) {
     b2Fixture* fixtureA = contact->GetFixtureA();
     b2Fixture* fixtureB = contact->GetFixtureB();
@@ -440,6 +399,7 @@ void PhysicsContactListener::updateGroundContacts() {
         }
     }
 }
+
 void CPhysics::destroyAllPlatforms() {    
     std::vector<b2Body*> platformsToDestroy;
     
@@ -454,5 +414,4 @@ void CPhysics::destroyAllPlatforms() {
     for (b2Body* platform : platformsToDestroy) {
         destroyBody(platform);
     }
-    
 }

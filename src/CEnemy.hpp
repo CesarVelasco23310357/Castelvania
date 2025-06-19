@@ -25,56 +25,56 @@ enum class EnemyState {
 class CEnemy {
 private:
     // Atributos del enemigo
-    std::string m_type;
-    EnemyType m_enemyType;
-    int m_health;
-    int m_maxHealth;
-    int m_damage;
-    sf::Vector2f m_position;
-    float m_speed;
+    std::string type;
+    EnemyType enemyType;
+    int health;
+    int maxHealth;
+    int damage;
+    sf::Vector2f position;
+    float speed;
     
     // ===================================
     // Sistema de físicas
     // ===================================
-    CPhysics* m_physics;             
-    b2Body* m_physicsBody;            
-    bool m_physicsEnabled;            
-    bool m_isGrounded;                
-    bool m_canFly;                    
+    CPhysics* physics;             
+    b2Body* physicsBody;            
+    bool physicsEnabled;            
+    bool grounded;                // ← Cambiado para evitar conflicto con getter isGrounded()
+    bool flyCapable;              // ← Cambiado para evitar conflicto con getter canFly()
     
     // IA y comportamiento
-    float m_detectionRange;
-    float m_attackRange;
-    float m_attackCooldown;
-    float m_currentCooldown;
+    float detectionRange;
+    float attackRange;
+    float attackCooldown;
+    float currentCooldown;
     
     // ===================================
     // Comportamiento de IA con físicas
     // ===================================
-    float m_jumpForce;               
-    float m_flyForce;               
-    float m_movementForce;            
-    float m_lastDirectionChange;      
-    int m_movementDirection;          
+    float jumpForce;               
+    float flyForce;               
+    float movementForce;            
+    float lastDirectionChange;      
+    int movementDirection;          
     
     // Gráficos SFML (fallback)
-    sf::RectangleShape m_sprite;
-    sf::Color m_color;
-    sf::Color m_originalColor;
+    sf::RectangleShape sprite;
+    sf::Color color;
+    sf::Color originalColor;
     
     // ===================================
     // NUEVO: Sistema de sprites y animación
     // ===================================
-    sf::Texture m_enemyTexture;      
-    sf::Sprite m_enemySprite;          
-    bool m_texturesLoaded;             
+    sf::Texture enemyTexture;      
+    sf::Sprite enemySprite;          
+    bool texturesLoaded;             
     
     // Sistema de animación
-    EnemyState m_currentState;       
-    int m_currentFrame;                
-    float m_animationTimer;            
-    float m_animationSpeed;            
-    bool m_isMoving;                   
+    EnemyState currentState;       
+    int currentFrame;                
+    float animationTimer;            
+    float animationSpeed;            
+    bool moving;                   // ← Cambiado para evitar conflicto con getter isMoving()
     
     // ===================================
     // CONFIGURACIÓN DE SPRITES POR TIPO DE ENEMIGO

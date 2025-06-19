@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <exception>
 #include "CGame.hpp"
@@ -22,8 +23,8 @@ int main() {
         return -1;
         
     } catch (...) {
-        std::cerr << "Error desconocido ocurrió." << std::endl;
-        std::cerr << "El juego se cerrará." << std::endl;
+        std::cerr << "Error desconocido ocurrio." << std::endl;
+        std::cerr << "El juego se cerrara." << std::endl;
         return -1;
     }
     

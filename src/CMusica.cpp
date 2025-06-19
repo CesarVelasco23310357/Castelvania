@@ -11,23 +11,18 @@ CMusica::CMusica()
       m_fadeStartVolume(0.0f), m_fadeTargetVolume(0.0f), m_transitionTarget(MusicType::NONE),
       m_menuMusicFile("assets/MenuFondo.ogg"), m_gameplayMusicFile("assets/GameplaySound.ogg"),
       m_musicLoaded(false) {
-    
-    std::cout << "CMusica: Sistema de audio inicializado." << std::endl;
 }
 
 // Destructor
 CMusica::~CMusica() {
     cleanup();
-    std::cout << "CMusica: Sistema de audio destruido." << std::endl;
 }
 
-// INICIALIZACIÓN
+// INICIALIZACION
 bool CMusica::initialize() {
-    std::cout << "CMusica: Inicializando sistema de música..." << std::endl;
-    
-    // Cargar archivos de música
+    // Cargar archivos de musica
     if (!loadMusic()) {
-        std::cerr << "CMusica: Error al cargar archivos de música." << std::endl;
+        std::cerr << "CMusica: Error al cargar archivos de musica." << std::endl;
         return false;
     }
     
@@ -35,44 +30,33 @@ bool CMusica::initialize() {
     setLooping(true);
     applyVolumeSettings();
     
-    std::cout << "CMusica: Sistema inicializado exitosamente." << std::endl;
+    std::cout << "Musica Lista" << std::endl;
     return true;
 }
 
 bool CMusica::loadMusic() {
-    std::cout << "CMusica: Cargando archivos de música..." << std::endl;
-    
     bool success = true;
     
-    // Cargar música del menú
+    // Cargar musica del menu
     if (!m_menuMusic.openFromFile(m_menuMusicFile)) {
         std::cerr << "CMusica: Error al cargar " << m_menuMusicFile << std::endl;
         success = false;
-    } else {
-        std::cout << "CMusica: ✓ " << m_menuMusicFile << " cargado exitosamente." << std::endl;
     }
     
-    // Cargar música del gameplay
+    // Cargar musica del gameplay
     if (!m_gameplayMusic.openFromFile(m_gameplayMusicFile)) {
         std::cerr << "CMusica: Error al cargar " << m_gameplayMusicFile << std::endl;
         success = false;
-    } else {
-        std::cout << "CMusica: ✓ " << m_gameplayMusicFile << " cargado exitosamente." << std::endl;
     }
     
     if (success) {
         m_musicLoaded = true;
-        std::cout << "CMusica: Todos los archivos de música cargados correctamente." << std::endl;
-    } else {
-        std::cout << "CMusica: Algunos archivos de música no se pudieron cargar." << std::endl;
     }
     
     return success;
 }
 
 void CMusica::cleanup() {
-    std::cout << "CMusica: Limpiando sistema de audio..." << std::endl;
-    
     stopMusic();
     m_currentMusic = nullptr;
     m_currentMusicType = MusicType::NONE;
@@ -80,14 +64,12 @@ void CMusica::cleanup() {
     m_musicLoaded = false;
 }
 
-// CONTROL PRINCIPAL DE MÚSICA
+// CONTROL PRINCIPAL DE MUSICA
 void CMusica::playMenuMusic() {
     if (!m_musicLoaded) {
-        std::cerr << "CMusica: No se puede reproducir música del menú - archivos no cargados." << std::endl;
+        std::cerr << "CMusica: No se puede reproducir musica del menu - archivos no cargados." << std::endl;
         return;
     }
-    
-    std::cout << "CMusica: Reproduciendo música del menú..." << std::endl;
     
     if (m_fadeEnabled && m_currentMusic && m_currentMusic->getStatus() == sf::Music::Playing) {
         fadeToMenuMusic();
@@ -98,11 +80,9 @@ void CMusica::playMenuMusic() {
 
 void CMusica::playGameplayMusic() {
     if (!m_musicLoaded) {
-        std::cerr << "CMusica: No se puede reproducir música del gameplay - archivos no cargados." << std::endl;
+        std::cerr << "CMusica: No se puede reproducir musica del gameplay - archivos no cargados." << std::endl;
         return;
     }
-    
-    std::cout << "CMusica: Reproduciendo música del gameplay..." << std::endl;
     
     if (m_fadeEnabled && m_currentMusic && m_currentMusic->getStatus() == sf::Music::Playing) {
         fadeToGameplayMusic();
@@ -113,7 +93,6 @@ void CMusica::playGameplayMusic() {
 
 void CMusica::stopMusic() {
     if (m_currentMusic) {
-        std::cout << "CMusica: Deteniendo música actual..." << std::endl;
         m_currentMusic->stop();
     }
     
@@ -125,7 +104,6 @@ void CMusica::stopMusic() {
 
 void CMusica::pauseMusic() {
     if (m_currentMusic && m_currentMusic->getStatus() == sf::Music::Playing) {
-        std::cout << "CMusica: Pausando música..." << std::endl;
         m_currentMusic->pause();
         m_audioState = AudioState::PAUSED;
     }
@@ -133,7 +111,6 @@ void CMusica::pauseMusic() {
 
 void CMusica::resumeMusic() {
     if (m_currentMusic && m_currentMusic->getStatus() == sf::Music::Paused) {
-        std::cout << "CMusica: Reanudando música..." << std::endl;
         m_currentMusic->play();
         m_audioState = AudioState::PLAYING;
     }
@@ -142,8 +119,6 @@ void CMusica::resumeMusic() {
 // TRANSICIONES SUAVES
 void CMusica::fadeToMenuMusic(float fadeTime) {
     if (!isMusicLoaded(MusicType::MENU)) return;
-    
-    std::cout << "CMusica: Transición suave a música del menú (" << fadeTime << "s)" << std::endl;
     
     m_transitionTarget = MusicType::MENU;
     m_audioState = AudioState::TRANSITIONING;
@@ -159,8 +134,6 @@ void CMusica::fadeToMenuMusic(float fadeTime) {
 void CMusica::fadeToGameplayMusic(float fadeTime) {
     if (!isMusicLoaded(MusicType::GAMEPLAY)) return;
     
-    std::cout << "CMusica: Transición suave a música del gameplay (" << fadeTime << "s)" << std::endl;
-    
     m_transitionTarget = MusicType::GAMEPLAY;
     m_audioState = AudioState::TRANSITIONING;
     
@@ -174,7 +147,6 @@ void CMusica::fadeToGameplayMusic(float fadeTime) {
 
 void CMusica::fadeOutCurrentMusic(float fadeTime) {
     if (m_currentMusic && m_currentMusic->getStatus() == sf::Music::Playing) {
-        std::cout << "CMusica: Fade out de música actual (" << fadeTime << "s)" << std::endl;
         m_transitionTarget = MusicType::NONE;
         startFade(m_currentMusic->getVolume(), 0.0f, fadeTime);
     }
@@ -182,20 +154,17 @@ void CMusica::fadeOutCurrentMusic(float fadeTime) {
 
 void CMusica::setFadeEnabled(bool enabled) {
     m_fadeEnabled = enabled;
-    std::cout << "CMusica: Transiciones suaves " << (enabled ? "activadas" : "desactivadas") << std::endl;
 }
 
 // CONTROL DE VOLUMEN
 void CMusica::setMasterVolumen(float volume) {
     m_masterVolume = std::clamp(volume, MIN_VOLUME, MAX_VOLUME);
     applyVolumeSettings();
-    std::cout << "CMusica: Volumen maestro ajustado a " << m_masterVolume << "%" << std::endl;
 }
 
 void CMusica::setMusicVolumen(float volume) {
     m_musicVolume = std::clamp(volume, MIN_VOLUME, MAX_VOLUME);
     applyVolumeSettings();
-    std::cout << "CMusica: Volumen de música ajustado a " << m_musicVolume << "%" << std::endl;
 }
 
 float CMusica::getMasterVolumen() const {
@@ -211,7 +180,6 @@ void CMusica::silenciar() {
     if (!m_isMuted) {
         m_isMuted = true;
         applyVolumeSettings();
-        std::cout << "CMusica: Audio silenciado." << std::endl;
     }
 }
 
@@ -219,7 +187,6 @@ void CMusica::desilenciar() {
     if (m_isMuted) {
         m_isMuted = false;
         applyVolumeSettings();
-        std::cout << "CMusica: Audio des-silenciado." << std::endl;
     }
 }
 
@@ -256,15 +223,14 @@ bool CMusica::isTransitioning() const {
     return m_audioState == AudioState::TRANSITIONING;
 }
 
-// CONFIGURACIÓN
+// CONFIGURACION
 void CMusica::setLooping(bool loop) {
     m_menuMusic.setLoop(loop);
     m_gameplayMusic.setLoop(loop);
-    std::cout << "CMusica: Reproducción en bucle " << (loop ? "activada" : "desactivada") << std::endl;
 }
 
 bool CMusica::isLooping() const {
-    return m_menuMusic.getLoop(); // Ambas músicas tienen el mismo setting
+    return m_menuMusic.getLoop(); // Ambas musicas tienen el mismo setting
 }
 
 // UPDATE
@@ -275,12 +241,11 @@ void CMusica::update(float deltaTime) {
         updateFade(deltaTime);
     }
     
-    // Verificar si la música sigue reproduciendo
+    // Verificar si la musica sigue reproduciendo
     if (m_currentMusic && m_audioState == AudioState::PLAYING) {
         if (m_currentMusic->getStatus() != sf::Music::Playing) {
             if (!isLooping()) {
                 m_audioState = AudioState::STOPPED;
-                std::cout << "CMusica: Música terminó de reproducirse." << std::endl;
             }
         }
     }
@@ -288,35 +253,35 @@ void CMusica::update(float deltaTime) {
 
 // DEBUG
 void CMusica::printAudioStatus() const {
-    std::cout << "=== ESTADO DEL SISTEMA DE MÚSICA ===" << std::endl;
-    std::cout << "Música actual: " << musicTypeToString(m_currentMusicType) << std::endl;
+    std::cout << "=== ESTADO DEL SISTEMA DE MUSICA ===" << std::endl;
+    std::cout << "Musica actual: " << musicTypeToString(m_currentMusicType) << std::endl;
     std::cout << "Estado: " << audioStateToString(m_audioState) << std::endl;
-    std::cout << "Reproduciendo: " << (isPlaying() ? "Sí" : "No") << std::endl;
-    std::cout << "Pausado: " << (isPaused() ? "Sí" : "No") << std::endl;
-    std::cout << "En transición: " << (isTransitioning() ? "Sí" : "No") << std::endl;
-    std::cout << "Archivos cargados: " << (m_musicLoaded ? "Sí" : "No") << std::endl;
-    std::cout << "Reproducción en bucle: " << (isLooping() ? "Sí" : "No") << std::endl;
+    std::cout << "Reproduciendo: " << (isPlaying() ? "Si" : "No") << std::endl;
+    std::cout << "Pausado: " << (isPaused() ? "Si" : "No") << std::endl;
+    std::cout << "En transicion: " << (isTransitioning() ? "Si" : "No") << std::endl;
+    std::cout << "Archivos cargados: " << (m_musicLoaded ? "Si" : "No") << std::endl;
+    std::cout << "Reproduccion en bucle: " << (isLooping() ? "Si" : "No") << std::endl;
     std::cout << "===================================" << std::endl;
 }
 
 void CMusica::printVolumeInfo() const {
-    std::cout << "=== INFORMACIÓN DE VOLUMEN ===" << std::endl;
+    std::cout << "=== INFORMACION DE VOLUMEN ===" << std::endl;
     std::cout << "Volumen maestro: " << m_masterVolume << "%" << std::endl;
-    std::cout << "Volumen de música: " << m_musicVolume << "%" << std::endl;
+    std::cout << "Volumen de musica: " << m_musicVolume << "%" << std::endl;
     std::cout << "Volumen efectivo: " << calculateEffectiveVolume() << "%" << std::endl;
-    std::cout << "Silenciado: " << (m_isMuted ? "Sí" : "No") << std::endl;
-    std::cout << "Transiciones suaves: " << (m_fadeEnabled ? "Sí" : "No") << std::endl;
+    std::cout << "Silenciado: " << (m_isMuted ? "Si" : "No") << std::endl;
+    std::cout << "Transiciones suaves: " << (m_fadeEnabled ? "Si" : "No") << std::endl;
     std::cout << "==============================" << std::endl;
 }
 
-// MÉTODOS PRIVADOS
+// METODOS PRIVADOS
 void CMusica::switchToMusic(MusicType type, bool immediate) {
-    // Detener música actual
+    // Detener musica actual
     if (m_currentMusic) {
         m_currentMusic->stop();
     }
     
-    // Cambiar a nueva música
+    // Cambiar a nueva musica
     m_currentMusic = getMusicByType(type);
     m_currentMusicType = type;
     
@@ -329,8 +294,6 @@ void CMusica::switchToMusic(MusicType type, bool immediate) {
         
         m_currentMusic->play();
         m_audioState = immediate ? AudioState::PLAYING : AudioState::FADING_IN;
-        
-        std::cout << "CMusica: Cambiado a " << musicTypeToString(type) << std::endl;
     }
 }
 
@@ -375,7 +338,7 @@ void CMusica::updateFade(float deltaTime) {
         return;
     }
     
-    // Interpolación lineal del volumen
+    // Interpolacion lineal del volumen
     float progress = m_fadeTimer / m_fadeDuration;
     float currentVolume = m_fadeStartVolume + (m_fadeTargetVolume - m_fadeStartVolume) * progress;
     
@@ -387,11 +350,11 @@ void CMusica::updateFade(float deltaTime) {
 void CMusica::completeFade() {
     if (m_audioState == AudioState::FADING_OUT) {
         if (m_transitionTarget != MusicType::NONE) {
-            // Cambiar a nueva música después del fade out
+            // Cambiar a nueva musica despues del fade out
             switchToMusic(m_transitionTarget, false);
             startFade(0.0f, calculateEffectiveVolume(), m_fadeDuration / 2.0f);
         } else {
-            // Solo fade out, detener música
+            // Solo fade out, detener musica
             stopMusic();
         }
     } else {
@@ -420,7 +383,7 @@ sf::Music* CMusica::getMusicByType(MusicType type) {
 std::string CMusica::musicTypeToString(MusicType type) const {
     switch (type) {
         case MusicType::NONE: return "Ninguna";
-        case MusicType::MENU: return "Menú";
+        case MusicType::MENU: return "Menu";
         case MusicType::GAMEPLAY: return "Gameplay";
         default: return "Desconocido";
     }
@@ -433,7 +396,7 @@ std::string CMusica::audioStateToString(AudioState state) const {
         case AudioState::PAUSED: return "Pausado";
         case AudioState::FADING_IN: return "Fade In";
         case AudioState::FADING_OUT: return "Fade Out";
-        case AudioState::TRANSITIONING: return "En Transición";
+        case AudioState::TRANSITIONING: return "En Transicion";
         default: return "Desconocido";
     }
 }

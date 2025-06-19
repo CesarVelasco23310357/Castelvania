@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include "CMusica.hpp"
+
 // Constructor
 CGame::CGame() 
     : m_gameState(GameState::MENU), m_isRunning(false), m_fontLoaded(false),
@@ -14,14 +15,11 @@ CGame::CGame()
     for (int i = 0; i < sf::Keyboard::KeyCount; i++) {
         m_keyPressed[i] = false;
     }
-    
-    std::cout << "CGame creado." << std::endl;
 }
 
 // Destructor
 CGame::~CGame() {
     cleanup();
-    std::cout << "CGame destruido." << std::endl;
 }
 
 // MAIN GAME LOOP
@@ -47,8 +45,6 @@ void CGame::run() {
 
 // GAME STATE MANAGEMENT
 void CGame::initialize() {
-    std::cout << "Inicializando juego..." << std::endl;
-    
     initializeWindow();
     loadResources();
     setupGameSettings();
@@ -64,27 +60,24 @@ void CGame::initialize() {
     m_isRunning = true;
     m_gameState = GameState::MENU;
     
-    std::cout << "Juego inicializado exitosamente." << std::endl;
+    std::cout << "CGame: Sistema inicializado exitosamente." << std::endl;
 }
 
 void CGame::initializeMusic() {
-    
     m_musica = std::make_unique<CMusica>();
     
     if (m_musica && m_musica->initialize()) {
         m_musica->playMenuMusic();
     } else {
-        std::cerr << "Error: No se pudo inicializar el sistema de música" << std::endl;
+        std::cerr << "Error: No se pudo inicializar el sistema de musica" << std::endl;
         m_musica.reset(); 
     }
 }
+
 void CGame::initializePhysics() {
-    
     m_physics = std::make_unique<CPhysics>();
     
-    if (m_physics) {
-        m_physics->debugPrint();
-    } else {
+    if (!m_physics) {
         std::cerr << "Error: No se pudo inicializar el sistema de fisicas" << std::endl;
     }
 }
@@ -100,12 +93,9 @@ void CGame::cleanup() {
     if (m_musica) {
         m_musica->cleanup();
         m_musica.reset();
-        
     }
     
     m_physics.reset();
-    
-
 }
 
 bool CGame::isRunning() const {
@@ -129,17 +119,12 @@ float CGame::getTotalPlayTime() const {
     return m_totalPlayTime;
 }
 
-// ===============================================
-// NUEVO: Getter para acceder al sistema de fisicas
-// ===============================================
 CPhysics* CGame::getPhysics() const {
     return m_physics.get();
 }
 
 // GAME CONTROL
 void CGame::startNewGame() {
-    std::cout << "Iniciando nuevo juego..." << std::endl;
-    
     // Reset estadisticas
     m_totalScore = 0;
     m_levelsCompleted = 0;
@@ -162,14 +147,12 @@ void CGame::startNewGame() {
 void CGame::pauseGame() {
     if (m_gameState == GameState::PLAYING) {
         m_gameState = GameState::PAUSED;
-        std::cout << "Juego pausado." << std::endl;
     }
 }
 
 void CGame::resumeGame() {
     if (m_gameState == GameState::PAUSED) {
         m_gameState = GameState::PLAYING;
-        std::cout << "Juego reanudado." << std::endl;
     }
 }
 
@@ -177,15 +160,13 @@ void CGame::restartLevel() {
     if (getActiveLevel()) {
         getActiveLevel()->resetLevel();
         if (m_player) {
-            m_player->setPosition(100.0f, 400.0f);  // ← CORREGIDO: Posicion inicial mas alta
+            m_player->setPosition(100.0f, 400.0f);
             m_player->setHealth(m_player->getMaxHealth());
-            // *** NUEVO: Sincronizar con fisicas ***
             if (m_physics && m_player->getPhysicsBody()) {
                 m_player->updatePhysicsPosition();
             }
         }
         m_gameState = GameState::PLAYING;
-        std::cout << "Nivel reiniciado." << std::endl;
     }
 }
 
@@ -196,16 +177,13 @@ void CGame::nextLevel() {
     if (m_currentLevelIndex < static_cast<int>(m_levels.size())) {
         loadLevel(m_currentLevelIndex);
         m_gameState = GameState::PLAYING;
-        std::cout << "Avanzando al nivel " << getCurrentLevel() << std::endl;
     } else {
         m_gameState = GameState::VICTORY;
-        std::cout << "¡Todos los niveles completados! ¡Victoria!" << std::endl;
     }
 }
 
 void CGame::endGame() {
     m_gameState = GameState::MENU;
-    std::cout << "Regresando al menu principal." << std::endl;
 }
 
 // CORE GAME LOOP METHODS
@@ -282,15 +260,10 @@ void CGame::update(float deltaTime) {
             break;
     }
     
-    // *** NUEVO: Actualizar sistema de música ***
     updateMusic(deltaTime);
-    
     updateUI();
 }
 
-// ===============================================
-// CORREGIDO: Actualizacion del mundo fisico mejorada
-// ===============================================
 void CGame::updatePhysics(float deltaTime) {
     if (!m_physics) {
         std::cerr << "Warning: Sistema de fisicas no inicializado" << std::endl;
@@ -303,20 +276,15 @@ void CGame::updatePhysics(float deltaTime) {
     if (m_player && m_player->getPhysicsBody()) {
         m_player->syncPositionFromPhysics();
     }
-    
-    // Sincronizar enemigos
-    CLevel* activeLevel = getActiveLevel();
- 
 }
+
 void CGame::updateMusic(float deltaTime) {
     if (!m_musica) return;
     
-    
     m_musica->update(deltaTime);
-    
-   
     handleMusicStateChanges();
 }
+
 void CGame::render() {
     m_window.clear(sf::Color::Black);
     
@@ -358,6 +326,7 @@ void CGame::processGameInput(float deltaTime) {
     
     handlePlayerMovement(deltaTime);
     handleMusicInput();
+    
     if (isKeyJustPressed(sf::Keyboard::I)) {
         debugPositions();
     }   
@@ -374,7 +343,7 @@ void CGame::processGameInput(float deltaTime) {
         restartLevel();
     }
     
-    //  DEBUG CONTROLS
+    // DEBUG CONTROLS
     if (isKeyJustPressed(sf::Keyboard::P)) {
         debugFullPhysicsState();
     }
@@ -404,9 +373,6 @@ void CGame::processGameInput(float deltaTime) {
         resetPlatformOffsets();
     }
     
-    // ===================================
-    // CORREGIDO: Llamadas a traves del nivel activo
-    // ===================================
     if (isKeyJustPressed(sf::Keyboard::F7)) {
         CLevel* activeLevel = getActiveLevel();
         if (activeLevel) {
@@ -428,17 +394,15 @@ void CGame::processGameInput(float deltaTime) {
     if (isKeyJustPressed(sf::Keyboard::Y)) {
         forcePlayerRepositioning();
     }
-   
 }
-
 
 void CGame::processPauseInput() {
     if (isKeyJustPressed(sf::Keyboard::R)) {
         restartLevel();
     }
 }
+
 void CGame::debugShowPlatformPositions() {
-    
     const auto& platforms = getActiveLevel()->getPlatforms();
     std::cout << "Total de plataformas: " << platforms.size() << std::endl;
     
@@ -464,26 +428,18 @@ void CGame::debugShowPlatformPositions() {
             std::cout << "   Y: " << diffY << " pixeles" << std::endl;
             
             if (std::abs(diffX) > 2.0f || std::abs(diffY) > 2.0f) {
-                std::cout << "    DESALINEACIoN DETECTADA!" << std::endl;
+                std::cout << "    DESALINEACION DETECTADA!" << std::endl;
             } else {
                 std::cout << "    Alineacion correcta" << std::endl;
             }
         }
     }
-    
-    //std::cout << "\nCONTROLES DE AJUSTE:" << std::endl;
-    //std::cout << "F2 = Mover ARRIBA | F3 = Mover ABAJO" << std::endl;
-    //std::cout << "F4 = Mover IZQUIERDA | F5 = Mover DERECHA" << std::endl;
-    //std::cout << "F6 = RESETEAR | F1 = Mostrar posiciones" << std::endl;
-    // std::cout << "=====================================\n" << std::endl;
 }
 
 void CGame::adjustPlatformOffset(float offsetX, float offsetY) {
-    std::cout << "\n🔧 AJUSTANDO PLATAFORMAS: (" << offsetX << ", " << offsetY << ")" << std::endl;
-    
     if (!getActiveLevel()) return;
     
-    // Aqui moveremos SOLO las plataformas visuales para alinearlas con las fisicas
+    // Mover SOLO las plataformas visuales para alinearlas con las fisicas
     auto& platforms = const_cast<std::vector<PhysicalPlatform>&>(getActiveLevel()->getPlatforms());
     
     for (auto& platform : platforms) {
@@ -494,17 +450,10 @@ void CGame::adjustPlatformOffset(float offsetX, float offsetY) {
         // También mover el shape de respaldo
         sf::Vector2f currentShapePos = platform.shape.getPosition();
         platform.shape.setPosition(currentShapePos.x + offsetX, currentShapePos.y + offsetY);
-        
-        std::cout << "   Plataforma movida de (" << currentPos.x << "," << currentPos.y 
-                  << ") a (" << (currentPos.x + offsetX) << "," << (currentPos.y + offsetY) << ")" << std::endl;
     }
-    
-    std::cout << " Ajuste aplicado. Presiona F1 para ver nuevas posiciones." << std::endl;
 }
 
 void CGame::resetPlatformOffsets() {
-    std::cout << "\nRESETEANDO POSICIONES DE PLATAFORMAS..." << std::endl;
-    
     if (!getActiveLevel()) return;
     
     auto& platforms = const_cast<std::vector<PhysicalPlatform>&>(getActiveLevel()->getPlatforms());
@@ -514,9 +463,8 @@ void CGame::resetPlatformOffsets() {
         platform.floorSprite.setPosition(platform.position.x, platform.position.y);
         platform.shape.setPosition(platform.position.x, platform.position.y);
     }
-    
-    std::cout << " Plataformas reseteadas a posiciones originales." << std::endl;
 }
+
 bool CGame::isKeyJustPressed(sf::Keyboard::Key key) {
     bool currentState = sf::Keyboard::isKeyPressed(key);
     bool wasPressed = m_keyPressed[key];
@@ -548,9 +496,6 @@ void CGame::checkCollisions() {
     checkAttackCollisions();
 }
 
-// ===============================================
-// CORREGIDO: Mejorar checkPlayerEnemyCollisions para evitar spam de daño
-// ===============================================
 void CGame::checkPlayerEnemyCollisions() {
     if (!m_player || !getActiveLevel()) return;
     
@@ -572,7 +517,6 @@ void CGame::checkPlayerEnemyCollisions() {
             int damage = closestEnemy->attack();
             if (damage > 0) {
                 m_player->takeDamage(damage);
-                std::cout << "¡El jugador recibe " << damage << " de daño!" << std::endl;
                 
                 // Añadir un pequeño cooldown para evitar daño continuo
                 m_inputCooldown = 0.5f; // 0.5 segundos de cooldown
@@ -592,7 +536,6 @@ void CGame::updateGameState() {
     // Verificar si el jugador murio
     if (!m_player->isAlive()) {
         m_gameState = GameState::GAME_OVER;
-        std::cout << "¡Game Over!" << std::endl;
         return;
     }
     
@@ -600,22 +543,15 @@ void CGame::updateGameState() {
     if (getActiveLevel()->isCompleted()) {
         m_gameState = GameState::LEVEL_COMPLETED;
         m_totalScore += 1000; // Bonus por completar nivel
-        std::cout << "¡Nivel " << getCurrentLevel() << " completado!" << std::endl;
     }
 }
 
 // LEVEL MANAGEMENT
-// ===============================================
-// CORREGIDO: Mejorar loadLevel con mejor manejo de fisicas
-// ===============================================
 void CGame::loadLevel(int levelIndex) {
     if (levelIndex < 0 || levelIndex >= static_cast<int>(m_levels.size())) {
-        std::cerr << " Error: indice de nivel invalido: " << levelIndex << std::endl;
-        std::cerr << "   Niveles disponibles: 0-" << (m_levels.size() - 1) << std::endl;
+        std::cerr << "Error: indice de nivel invalido: " << levelIndex << std::endl;
         return;
     }
-    
-    std::cout << "\n🎮 CARGANDO NIVEL " << (levelIndex + 1) << "..." << std::endl;
     
     // Descargar nivel anterior si existe
     if (m_currentLevelIndex >= 0 && m_currentLevelIndex < static_cast<int>(m_levels.size())) {
@@ -628,49 +564,32 @@ void CGame::loadLevel(int levelIndex) {
     
     // Verificar que el nivel existe
     if (!m_levels[levelIndex]) {
-        std::cerr << " Error: Nivel " << levelIndex << " es nulo" << std::endl;
+        std::cerr << "Error: Nivel " << levelIndex << " es nulo" << std::endl;
         m_gameState = GameState::GAME_OVER;
         return;
     }
     
-    // ===================================
-    // CORREGIDO: Configurar fisicas del nivel ANTES de cargar
-    // ===================================
+    // Configurar fisicas del nivel ANTES de cargar
     if (m_physics) {
-        std::cout << "⚙️ Inicializando fisicas del nivel..." << std::endl;
         m_levels[levelIndex]->initializePhysics(m_physics.get());
     } else {
-        std::cerr << " Warning: Cargando nivel sin sistema de fisicas" << std::endl;
+        std::cerr << "Warning: Cargando nivel sin sistema de fisicas" << std::endl;
     }
     
     try {
         m_levels[levelIndex]->loadLevel();
         m_levels[levelIndex]->startLevel();
         
-        // ===================================
-        // NUEVO: Verificar que las plataformas se crearon correctamente
-        // ===================================
-        std::cout << "Verificando plataformas creadas..." << std::endl;
-        std::cout << "Total de plataformas: " << m_levels[levelIndex]->getPlatformCount() << std::endl;
-        
-        if (m_physics) {
-            std::cout << "Total de cuerpos fisicos: " << m_physics->getBodyCount() << std::endl;
-        }
-        
     } catch (const std::exception& e) {
-        std::cerr << " Error al cargar nivel: " << e.what() << std::endl;
+        std::cerr << "Error al cargar nivel: " << e.what() << std::endl;
         m_gameState = GameState::GAME_OVER;
         return;
     }
     
-    // ===================================
-    // CORREGIDO: Reposicionar jugador para este nivel especificamente
-    // ===================================
+    // Reposicionar jugador para este nivel especificamente
     if (m_player) {
         float playerX = 100.0f;
         float playerY = 400.0f;  
-        
-        std::cout << "🔄 Reposicionando jugador a (" << playerX << ", " << playerY << ")" << std::endl;
         
         m_player->setPosition(playerX, playerY);
         m_player->setHealth(m_player->getMaxHealth());
@@ -678,22 +597,15 @@ void CGame::loadLevel(int levelIndex) {
         // Sincronizar con fisicas
         if (m_physics && m_player->getPhysicsBody()) {
             m_player->updatePhysicsPosition();
-            std::cout << " Posicion del jugador sincronizada con fisicas" << std::endl;
         }
     }
-    
-    std::cout << " Nivel " << (levelIndex + 1) << " cargado exitosamente\n" << std::endl;
 }
 
 void CGame::createLevels() {
-    std::cout << "Creando niveles..." << std::endl;
-    
     // Crear 3 niveles principales
     for (int i = 1; i <= 3; i++) {
         m_levels.push_back(std::make_unique<CLevel>(i));
     }
-    
-    std::cout << "Creados " << m_levels.size() << " niveles." << std::endl;
 }
 
 CLevel* CGame::getActiveLevel() {
@@ -703,9 +615,6 @@ CLevel* CGame::getActiveLevel() {
     return nullptr;
 }
 
-// ===============================================
-// CORREGIDO: Agregar implementacion del método const faltante
-// ===============================================
 const CLevel* CGame::getActiveLevel() const {
     if (m_currentLevelIndex >= 0 && m_currentLevelIndex < static_cast<int>(m_levels.size())) {
         return m_levels[m_currentLevelIndex].get();
@@ -714,21 +623,13 @@ const CLevel* CGame::getActiveLevel() const {
 }
 
 // PLAYER MANAGEMENT
-// ===============================================
-// CORREGIDO: Mejorar createPlayer para evitar bloqueo de UI
-// ===============================================
 void CGame::createPlayer() {
     std::string playerName = "Heroe"; // Nombre por defecto para evitar bloqueo de UI
-    
-    std::cout << "\nCREANDO JUGADOR..." << std::endl;
-    std::cout << "Nombre: " << playerName << std::endl;
     
     m_player = std::make_unique<CPlayer>(playerName);
     
     float startX = 400.0f;  // Centro de pantalla
     float startY = 350.0f;  // ARRIBA del suelo negro
-    
-    std::cout << "Posicion inicial: (" << startX << ", " << startY << ")" << std::endl;
     
     m_player->setPosition(startX, startY);
     m_player->setSpeed(m_playerSpeed);
@@ -737,34 +638,27 @@ void CGame::createPlayer() {
     // Inicializar fisicas del jugador
     if (m_physics) {
         m_player->initializePhysics(m_physics.get());
-        std::cout << " Jugador agregado al sistema de fisicas" << std::endl;
         
         // Verificar que el cuerpo fisico se creo correctamente
-        if (m_player->getPhysicsBody()) {
-            std::cout << " Cuerpo fisico del jugador verificado" << std::endl;
-        } else {
-            std::cerr << " ERROR: Cuerpo fisico del jugador NO se creo" << std::endl;
+        if (!m_player->getPhysicsBody()) {
+            std::cerr << "ERROR: Cuerpo fisico del jugador NO se creo" << std::endl;
         }
     } else {
-        std::cerr << " ERROR: Sistema de fisicas no disponible" << std::endl;
+        std::cerr << "ERROR: Sistema de fisicas no disponible" << std::endl;
     }
-    
-    std::cout << "Jugador creado exitosamente\n" << std::endl;
 }
+
 void CGame::handleMusicInput() {
     if (!m_musica) return;
     
- 
     if (isKeyJustPressed(sf::Keyboard::M)) {
         m_musica->toggleSilencio();
     }
     
-
     if (isKeyJustPressed(sf::Keyboard::Equal)) { 
         float currentVolume = m_musica->getMasterVolumen();
         m_musica->setMasterVolumen(currentVolume + 10.0f);
     }
-    
     
     if (isKeyJustPressed(sf::Keyboard::Hyphen)) { 
         float currentVolume = m_musica->getMasterVolumen();
@@ -776,6 +670,7 @@ void CGame::handleMusicInput() {
         printMusicInfo();
     }
 }
+
 void CGame::handleMusicStateChanges() {
     if (!m_musica) return;
     
@@ -817,6 +712,7 @@ void CGame::handleMusicStateChanges() {
         m_musica->resumeMusic();
     }
 }
+
 void CGame::handlePlayerMovement(float deltaTime) {
     if (!m_player) return;
     
@@ -873,6 +769,7 @@ void CGame::handlePlayerMovement(float deltaTime) {
     // Actualizar animacion
     m_player->setRunning(isMoving);
 }
+
 void CGame::debugMovement() {
     std::cout << "\n DEBUG DE MOVIMIENTO" << std::endl;
     std::cout << "======================" << std::endl;
@@ -894,44 +791,32 @@ void CGame::debugMovement() {
         std::cout << "   Posicion: (" << pos.x << ", " << pos.y << ")" << std::endl;
         std::cout << "   Velocidad: (" << velocity.x << ", " << velocity.y << ")" << std::endl;
         std::cout << "   En suelo: " << (m_player->isGrounded() ? "Si" : "NO") << std::endl;
-        
-
     }
     
     std::cout << "======================\n" << std::endl;
 }
-// ===============================================
-// CORREGIDO: Mejorar handlePlayerJump con mas debug
-// ===============================================
+
 void CGame::handlePlayerJump() {
     if (!m_player) {
-        std::cerr << " Warning: Intento de salto sin jugador" << std::endl;
+        std::cerr << "Warning: Intento de salto sin jugador" << std::endl;
         return;
     }
     
     if (!m_physics) {
-        std::cerr << " Warning: Intento de salto sin sistema de fisicas" << std::endl;
+        std::cerr << "Warning: Intento de salto sin sistema de fisicas" << std::endl;
         return;
     }
     
     if (!m_player->getPhysicsBody()) {
-        std::cerr << " Warning: Jugador sin cuerpo fisico" << std::endl;
+        std::cerr << "Warning: Jugador sin cuerpo fisico" << std::endl;
         return;
     }
     
-    // ===================================
-    // NUEVO: Debug mas detallado del salto
-    // ===================================
     bool isGrounded = m_player->isGrounded();
     bool isAlive = m_player->isAlive();
     
     if (isGrounded && isAlive) {
         m_player->jump();
-        std::cout << " ¡Salto ejecutado!" << std::endl;
-    } else if (!isGrounded) {
-        std::cout << " No se puede saltar: jugador en el aire" << std::endl;
-    } else if (!isAlive) {
-        std::cout << " No se puede saltar: jugador muerto" << std::endl;
     }
 }
 
@@ -988,9 +873,7 @@ void CGame::updatePlayerBounds() {
     }
 }
 
-// ===============================================
-// NUEVOS MÉTODOS DE GESTIoN DE FiSICAS
-// ===============================================
+// METODOS DE GESTION DE FISICAS
 void CGame::syncPlayerWithPhysics() {
     if (m_player && m_physics) {
         m_player->syncPositionFromPhysics();
@@ -998,14 +881,12 @@ void CGame::syncPlayerWithPhysics() {
 }
 
 void CGame::createPhysicsWorld() {
-    // Este método se puede usar para crear un mundo de fisicas personalizado
     if (m_physics) {
         std::cout << "Mundo de fisicas ya creado en initializePhysics()" << std::endl;
     }
 }
 
 void CGame::createLevelPlatforms() {
-    // Las plataformas se crean en loadLevel() automaticamente
     if (getActiveLevel() && m_physics) {
         std::cout << "Plataformas del nivel cargadas automaticamente" << std::endl;
     }
@@ -1034,10 +915,8 @@ void CGame::setupUI() {
     // Intentar cargar fuente
     if (m_font.loadFromFile("arial.ttf")) {
         m_fontLoaded = true;
-        std::cout << "Fuente cargada exitosamente." << std::endl;
     } else {
         m_fontLoaded = false;
-        std::cout << "No se pudo cargar fuente personalizada, usando fuente por defecto." << std::endl;
     }
     
     // Configurar textos
@@ -1076,16 +955,12 @@ void CGame::updateUI() {
 }
 
 void CGame::renderMenu() {
-    // ===================================
     // RENDERIZAR IMAGEN DE FONDO PRIMERO
-    // ===================================
     if (m_titleScreenTexture.getSize().x > 0) {
         m_window.draw(m_titleScreenSprite);
     } 
     
-    // ===================================
     // RENDERIZAR TEXTOS ENCIMA DE LA IMAGEN
-    // ===================================
     m_titleText.setString("PRESIONA ENTER PARA COMENZAR");
     m_titleText.setCharacterSize(32);
     m_titleText.setFillColor(sf::Color::White);
@@ -1095,7 +970,7 @@ void CGame::renderMenu() {
     m_window.draw(m_titleText);
     
     // Instrucciones de controles (MODIFICADO para incluir música)
-    m_statusText.setString("A/D = Mover | W/ESPACIO = Saltar | ENTER = Atacar | M = Música | +/- = Volumen");
+    m_statusText.setString("A/D = Mover | W/ESPACIO = Saltar | ENTER = Atacar | M = Musica | +/- = Volumen");
     m_statusText.setCharacterSize(16);
     m_statusText.setFillColor(sf::Color::Yellow);
     m_statusText.setOutlineThickness(1.0f);
@@ -1160,13 +1035,13 @@ void CGame::renderGameOver() {
 }
 
 void CGame::renderVictory() {
-    m_titleText.setString("¡VICTORIA!");
+    m_titleText.setString("VICTORIA!");
     m_titleText.setCharacterSize(48);
     m_titleText.setFillColor(sf::Color::Green);
     centerText(m_titleText, 200.0f);
     m_window.draw(m_titleText);
     
-    m_statusText.setString("¡Has completado todos los niveles!");
+    m_statusText.setString("Has completado todos los niveles!");
     m_statusText.setCharacterSize(24);
     m_statusText.setFillColor(sf::Color::White);
     centerText(m_statusText, 280.0f);
@@ -1192,7 +1067,7 @@ void CGame::renderLevelCompleted() {
     overlay.setFillColor(sf::Color(0, 0, 0, 128));
     m_window.draw(overlay);
     
-    m_titleText.setString("¡NIVEL COMPLETADO!");
+    m_titleText.setString("NIVEL COMPLETADO!");
     m_titleText.setCharacterSize(36);
     m_titleText.setFillColor(sf::Color::Green);
     centerText(m_titleText, 250.0f);
@@ -1237,9 +1112,6 @@ void CGame::renderHUD() {
     }
 }
 
-// ===============================================
-// NUEVO: Renderizado de debug de fisicas
-// ===============================================
 void CGame::renderPhysicsDebug() {
     // Este método se puede usar para renderizar informacion de debug de fisicas
     // Por ejemplo, dibujar los contornos de los cuerpos fisicos
@@ -1264,16 +1136,13 @@ void CGame::updateHealthBar() {
     m_healthBar.setFillColor(getHealthBarColor(healthPercentage));
 }
 
-// ===============================================
-// CORREGIDO: Debug completo mejorado
-// ===============================================
 void CGame::debugFullPhysicsState() {  
     // Estado del jugador
     if (m_player) {
         sf::Vector2f pos = m_player->getPosition();
         sf::Vector2f vel = m_player->getVelocity();
         
-        std::cout << "\n👤 JUGADOR:" << std::endl;
+        std::cout << "\nJUGADOR:" << std::endl;
         std::cout << "   Posicion: (" << pos.x << ", " << pos.y << ")" << std::endl;
         std::cout << "   Velocidad: (" << vel.x << ", " << vel.y << ")" << std::endl;
         std::cout << "   En suelo: " << (m_player->isGrounded() ? "Si" : "NO") << std::endl;
@@ -1301,18 +1170,14 @@ void CGame::debugFullPhysicsState() {
     
     // Estado detallado de las fisicas
     if (m_physics) {
-        std::cout << "\n🔧 DETALLES DE FiSICAS:" << std::endl;
+        std::cout << "\nDETALLES DE FISICAS:" << std::endl;
         m_physics->debugPrint();
     }
     
-    std::cout << "════════════════════════════════\n" << std::endl;
+    std::cout << "================================\n" << std::endl;
 }
 
-// ===============================================
-// NUEVO: Funcion de debug especifica para plataformas
-// ===============================================
 void CGame::debugPlatformInfo() {
-    
     const auto& platforms = getActiveLevel()->getPlatforms();
     std::cout << "Total de plataformas: " << platforms.size() << std::endl;
     
@@ -1320,7 +1185,7 @@ void CGame::debugPlatformInfo() {
         const auto& platform = platforms[i];
         std::cout << "Plataforma " << (i+1) << ":" << std::endl;
         std::cout << "   Posicion: (" << platform.position.x << ", " << platform.position.y << ")" << std::endl;
-        std::cout << "   Tamaño: " << platform.size.x << "x" << platform.size.y << std::endl;
+        std::cout << "   Tamano: " << platform.size.x << "x" << platform.size.y << std::endl;
         std::cout << "   Color: ";
         
         sf::Color color = platform.color;
@@ -1330,17 +1195,11 @@ void CGame::debugPlatformInfo() {
         else if (color == sf::Color::Red) std::cout << "ROJO";
         else if (color == sf::Color::Cyan) std::cout << "CYAN";
         else std::cout << "Otro";
-    
     }
-    
 }
 
-// ===============================================
-// NUEVO: Funcion para forzar reposicionamiento del jugador
-// ===============================================
 void CGame::forcePlayerRepositioning() {
     if (!m_player || !m_physics) return;
-    
     
     // Posicionar al jugador en una posicion segura arriba del suelo
     float safeX = 100.0f;
@@ -1356,8 +1215,7 @@ void CGame::forcePlayerRepositioning() {
     m_player->setPosition(safeX, safeY);
     m_player->updatePhysicsPosition();
     
-    std::cout << " Jugador reposicionado a (" << safeX << ", " << safeY << ")" << std::endl;
-    std::cout << "   Deberia caer al suelo negro en Y=570\n" << std::endl;
+    std::cout << "Jugador reposicionado a (" << safeX << ", " << safeY << ")" << std::endl;
 }
 
 std::string CGame::gameStateToString(GameState state) const {
@@ -1383,31 +1241,20 @@ void CGame::initializeWindow() {
     m_window.create(sf::VideoMode(800, 600), "Castelvania", sf::Style::Titlebar | sf::Style::Close);
     m_window.setFramerateLimit(60);
     m_window.setVerticalSyncEnabled(true);
-    
-    std::cout << "Ventana inicializada: 800x600" << std::endl;
 }
 
 void CGame::loadResources() {
-    
-    
-    // ===================================
-    // CARGAR IMAGEN DE TiTULO
-    // ===================================
-    
+    // CARGAR IMAGEN DE TITULO
     if (m_titleScreenTexture.loadFromFile("assets/title_screen.png")) {
-        
-        
         // Configurar sprite de titulo
         m_titleScreenSprite.setTexture(m_titleScreenTexture);
         
-        // ===================================
         // ESCALAR IMAGEN PARA AJUSTARSE A LA VENTANA (800x600)
-        // ===================================
         sf::Vector2u textureSize = m_titleScreenTexture.getSize();
         
         // Calcular escalado para ajustar a 800x600 manteniendo aspecto
-        float scaleX = 800.0f / textureSize.x;  // 800 / 1011 = ~0.79
-        float scaleY = 600.0f / textureSize.y;  // 600 / 738 = ~0.81
+        float scaleX = 800.0f / textureSize.x;
+        float scaleY = 600.0f / textureSize.y;
         
         // Usar el menor escalado para que quepa completa
         float finalScale = std::min(scaleX, scaleY);
@@ -1419,22 +1266,17 @@ void CGame::loadResources() {
         float centerY = (600.0f - spriteBounds.height) / 2.0f;
         m_titleScreenSprite.setPosition(centerX, centerY);
         
-        
     } else {
         std::cerr << "Error: No se pudo cargar assets/title_screen.png" << std::endl;
-        std::cerr << " Se usara fondo negro por defecto" << std::endl;
     }
-    
-    std::cout << "Recursos cargados." << std::endl;
 }
 
 void CGame::setupGameSettings() {
     // Configurar ajustes del juego
     m_playerSpeed = 150.0f;
-    m_jumpForce = 18.0f;     // ← NUEVO: Fuerza de salto
+    m_jumpForce = 18.0f;
     m_attackRange = 50.0f;
     m_attackDamage = 25;
-    
 }
 
 // DEBUG
@@ -1454,9 +1296,6 @@ void CGame::printPlayerPosition() const {
     }
 }
 
-// ===============================================
-// NUEVO: Debug de fisicas
-// ===============================================
 void CGame::printPhysicsInfo() const {
     if (m_physics) {
         m_physics->debugPrint();
@@ -1469,8 +1308,8 @@ void CGame::printPhysicsInfo() const {
             getActiveLevel()->printPhysicsInfo();
         }
     } 
-
 }
+
 void CGame::debugPositions() {
     if (m_player) {
         sf::Vector2f pos = m_player->getPosition();
@@ -1478,18 +1317,14 @@ void CGame::debugPositions() {
         std::cout << "Suelo en Y=450, jugador " << (pos.y < 450 ? "ARRIBA" : "ABAJO") << std::endl;
     }
 }
+
 CMusica* CGame::getMusica() const {
     return m_musica.get();
 }
 
-
 void CGame::printMusicInfo() const {
-
-    
     if (m_musica) {
         m_musica->printAudioStatus();
         m_musica->printVolumeInfo();
     }
-    
-
 }

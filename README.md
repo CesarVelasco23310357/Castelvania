@@ -177,7 +177,7 @@ Estados disponibles:
 - **Frustum culling**: Solo renderiza objetos visibles
 - **Física optimizada**: 60 FPS estables con múltiples objetos
 
-### 🧠 IA Eficiente
+### 🧠 IA
 - **Detección por distancia**: Los enemigos solo calculan IA cuando el jugador está cerca
 - **Estados de comportamiento**: Cada enemigo tiene estados idle/chase/attack
 - **Pathfinding básico**: Los enemigos evitan obstáculos simples

@@ -36,11 +36,11 @@ private:
     // ===================================
     // Sistema de físicas
     // ===================================
-    CPhysics* m_physics;              // Referencia al sistema de físicas
-    b2Body* m_physicsBody;            // Cuerpo físico del enemigo
-    bool m_physicsEnabled;            // Si las físicas están activas
-    bool m_isGrounded;                // Si está en el suelo
-    bool m_canFly;                    // Si puede volar (murciélagos)
+    CPhysics* m_physics;             
+    b2Body* m_physicsBody;            
+    bool m_physicsEnabled;            
+    bool m_isGrounded;                
+    bool m_canFly;                    
     
     // IA y comportamiento
     float m_detectionRange;
@@ -51,11 +51,11 @@ private:
     // ===================================
     // Comportamiento de IA con físicas
     // ===================================
-    float m_jumpForce;                // Fuerza de salto para esqueletos/zombies
-    float m_flyForce;                 // Fuerza de vuelo para murciélagos
-    float m_movementForce;            // Fuerza de movimiento horizontal
-    float m_lastDirectionChange;      // Timer para cambio de dirección
-    int m_movementDirection;          // -1 = izquierda, 1 = derecha, 0 = parado
+    float m_jumpForce;               
+    float m_flyForce;               
+    float m_movementForce;            
+    float m_lastDirectionChange;      
+    int m_movementDirection;          
     
     // Gráficos SFML (fallback)
     sf::RectangleShape m_sprite;
@@ -65,20 +65,19 @@ private:
     // ===================================
     // NUEVO: Sistema de sprites y animación
     // ===================================
-    sf::Texture m_enemyTexture;       // Textura del sprite sheet del enemigo
-    sf::Sprite m_enemySprite;          // Sprite renderizable
-    bool m_texturesLoaded;             // Si las texturas están cargadas
+    sf::Texture m_enemyTexture;      
+    sf::Sprite m_enemySprite;          
+    bool m_texturesLoaded;             
     
     // Sistema de animación
-    EnemyState m_currentState;         // Estado actual (IDLE o MOVING)
-    int m_currentFrame;                // Frame actual de la animación
-    float m_animationTimer;            // Timer para cambio de frames
-    float m_animationSpeed;            // Velocidad de animación
-    bool m_isMoving;                   // Si el enemigo se está moviendo
+    EnemyState m_currentState;       
+    int m_currentFrame;                
+    float m_animationTimer;            
+    float m_animationSpeed;            
+    bool m_isMoving;                   
     
     // ===================================
     // CONFIGURACIÓN DE SPRITES POR TIPO DE ENEMIGO
-    // Ajusta estos valores según el tamaño real de tus sprites
     // ===================================
     
     // ZOMBIE - zombie.png

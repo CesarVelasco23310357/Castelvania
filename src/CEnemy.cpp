@@ -6,23 +6,23 @@
 // Constructor
 CEnemy::CEnemy(EnemyType type, float x, float y) 
     : m_enemyType(type), m_position(x, y), m_currentCooldown(0.0f),
-      m_physics(nullptr),           // Referencia al sistema de físicas
-      m_physicsBody(nullptr),       // Cuerpo físico
-      m_physicsEnabled(false),      // Estado de físicas
+      m_physics(nullptr),           // Referencia al sistema de fisicas
+      m_physicsBody(nullptr),       // Cuerpo fisico
+      m_physicsEnabled(false),      // Estado de fisicas
       m_isGrounded(false),          // Estado en el suelo
       m_canFly(false),              // Capacidad de volar
       m_jumpForce(0.0f),            // Fuerza de salto
       m_flyForce(0.0f),             // Fuerza de vuelo
       m_movementForce(0.0f),        // Fuerza de movimiento
-      m_lastDirectionChange(0.0f),  // Timer para cambio de dirección
-      m_movementDirection(1),       // Dirección inicial (derecha)
+      m_lastDirectionChange(0.0f),  // Timer para cambio de direccion
+      m_movementDirection(1),       // Direccion inicial (derecha)
       // ===================================
-      // NUEVO: Inicialización del sistema de sprites
+      // NUEVO: Inicializacion del sistema de sprites
       // ===================================
       m_texturesLoaded(false),      // Estado de texturas
       m_currentState(EnemyState::IDLE), // Estado inicial
       m_currentFrame(0),            // Frame inicial
-      m_animationTimer(0.0f),       // Timer de animación
+      m_animationTimer(0.0f),       // Timer de animacion
       m_animationSpeed(0.3f),       // Velocidad por defecto
       m_isMoving(false) {           // Estado de movimiento
     
@@ -38,17 +38,17 @@ CEnemy::CEnemy(EnemyType type, float x, float y)
     // ===================================
     // NUEVO: Cargar texturas del enemigo
     // ===================================
-    std::cout << "🎨 Cargando sprites para enemigo " << m_type << "..." << std::endl;
+    std::cout << " Cargando sprites para enemigo " << m_type << "..." << std::endl;
     loadEnemyTextures();
     
-    std::cout << "Enemigo " << m_type << " creado en posición (" 
+    std::cout << "Enemigo " << m_type << " creado en posicion (" 
               << x << ", " << y << ") con sprites: " 
               << (m_texturesLoaded ? "CARGADOS" : "FALLBACK") << std::endl;
 }
 
 // Destructor
 CEnemy::~CEnemy() {
-    // El sistema de físicas se encarga de limpiar los cuerpos automáticamente
+    // El sistema de fisicas se encarga de limpiar los cuerpos automaticamente
     std::cout << "Enemigo " << m_type << " destruido." << std::endl;
 }
 
@@ -97,7 +97,7 @@ float CEnemy::getAttackRange() const {
 }
 
 // ===================================
-// Getters para físicas
+// Getters para fisicas
 // ===================================
 bool CEnemy::isGrounded() const {
     return m_isGrounded;
@@ -125,7 +125,7 @@ int CEnemy::getMovementDirection() const {
 }
 
 // ===================================
-// NUEVO: Getters para animación
+// NUEVO: Getters para animacion
 // ===================================
 EnemyState CEnemy::getCurrentState() const {
     return m_currentState;
@@ -172,7 +172,7 @@ void CEnemy::setHealth(int health) {
 }
 
 // ===================================
-// NUEVO: Setter para controlar animación
+// NUEVO: Setter para controlar animacion
 // ===================================
 void CEnemy::setMoving(bool moving) {
     if (m_isMoving != moving) {
@@ -182,39 +182,39 @@ void CEnemy::setMoving(bool moving) {
 }
 
 // ===================================
-// Inicializar físicas del enemigo
+// Inicializar fisicas del enemigo
 // ===================================
 void CEnemy::initializePhysics(CPhysics* physics) {
     if (!physics) {
-        std::cerr << "❌ Error: Sistema de físicas nulo para enemigo" << std::endl;
+        std::cerr << " Error: Sistema de fisicas nulo para enemigo" << std::endl;
         return;
     }
     
-    std::cout << "⚙️ Inicializando físicas del enemigo " << m_type << "..." << std::endl;
+    std::cout << "⚙️ Inicializando fisicas del enemigo " << m_type << "..." << std::endl;
     
     m_physics = physics;
     
-    // Crear cuerpo físico del enemigo
+    // Crear cuerpo fisico del enemigo
     m_physicsBody = m_physics->createEnemyBody(m_position.x, m_position.y, this);
     
     if (m_physicsBody) {
         m_physicsEnabled = true;
         
-        // Configurar propiedades físicas específicas por tipo
+        // Configurar propiedades fisicas especificas por tipo
         setupPhysicsForType();
         
-        // Configurar posición inicial
+        // Configurar posicion inicial
         updatePhysicsPosition();
         
-        std::cout << "✅ Cuerpo físico del enemigo " << m_type << " creado exitosamente" << std::endl;
+        std::cout << " Cuerpo fisico del enemigo " << m_type << " creado exitosamente" << std::endl;
     } else {
-        std::cerr << "❌ Error: No se pudo crear el cuerpo físico del enemigo" << std::endl;
+        std::cerr << " Error: No se pudo crear el cuerpo fisico del enemigo" << std::endl;
         m_physicsEnabled = false;
     }
 }
 
 // ===================================
-// Configurar físicas según el tipo
+// Configurar fisicas según el tipo
 // ===================================
 void CEnemy::setupPhysicsForType() {
     if (!m_physicsEnabled || !m_physicsBody) return;
@@ -224,21 +224,18 @@ void CEnemy::setupPhysicsForType() {
             m_canFly = true;
             m_flyForce = MURCIELAGO_FLY_FORCE;
             m_movementForce = DEFAULT_MOVEMENT_FORCE;
-            std::cout << "🦇 Murciélago configurado para volar" << std::endl;
             break;
             
         case EnemyType::ESQUELETO:
             m_canFly = false;
             m_jumpForce = ESQUELETO_JUMP_FORCE;
             m_movementForce = DEFAULT_MOVEMENT_FORCE;
-            std::cout << "💀 Esqueleto configurado para saltar" << std::endl;
             break;
             
         case EnemyType::ZOMBIE:
             m_canFly = false;
-            m_jumpForce = 0.0f; // Los zombies no saltan
+            m_jumpForce = 0.18f; 
             m_movementForce = ZOMBIE_MOVEMENT_FORCE;
-            std::cout << "🧟 Zombie configurado para caminar" << std::endl;
             break;
             
         default:
@@ -250,16 +247,16 @@ void CEnemy::setupPhysicsForType() {
 }
 
 // ===================================
-// Sincronizar posición desde físicas
+// Sincronizar posicion desde fisicas
 // ===================================
 void CEnemy::syncPositionFromPhysics() {
     if (!m_physicsEnabled || !m_physicsBody) return;
     
-    // Obtener posición del cuerpo físico
+    // Obtener posicion del cuerpo fisico
     b2Vec2 physicsPos = m_physicsBody->GetPosition();
     sf::Vector2f newPos = CPhysics::metersToPixels(physicsPos);
     
-    // Actualizar posición visual
+    // Actualizar posicion visual
     m_position = newPos;
     m_sprite.setPosition(m_position);
     
@@ -270,17 +267,17 @@ void CEnemy::syncPositionFromPhysics() {
         m_enemySprite.setPosition(m_position);
     }
     
-    // Actualizar estados basados en físicas
+    // Actualizar estados basados en fisicas
     updatePhysicsState();
 }
 
 // ===================================
-// Actualizar posición en físicas
+// Actualizar posicion en fisicas
 // ===================================
 void CEnemy::updatePhysicsPosition() {
     if (!m_physicsEnabled || !m_physicsBody) return;
     
-    // Convertir posición visual a físicas
+    // Convertir posicion visual a fisicas
     b2Vec2 physicsPos = CPhysics::sfmlVecToB2(m_position);
     m_physicsBody->SetTransform(physicsPos, m_physicsBody->GetAngle());
 }
@@ -289,7 +286,7 @@ void CEnemy::updatePhysicsPosition() {
 void CEnemy::moveTowards(const sf::Vector2f& targetPosition, float deltaTime) {
     if (!isAlive()) return;
     
-    // Si tiene físicas habilitadas, usar movimiento con físicas
+    // Si tiene fisicas habilitadas, usar movimiento con fisicas
     if (m_physicsEnabled) {
         moveWithPhysics(targetPosition, deltaTime);
         return;
@@ -300,7 +297,7 @@ void CEnemy::moveTowards(const sf::Vector2f& targetPosition, float deltaTime) {
     float distance = calculateDistance(m_position, targetPosition);
     
     if (distance <= m_attackRange) {
-        setMoving(false);  // ← NUEVO: Parar animación
+        setMoving(false);  // ← NUEVO: Parar animacion
         return;
     }
     
@@ -313,17 +310,17 @@ void CEnemy::moveTowards(const sf::Vector2f& targetPosition, float deltaTime) {
         m_sprite.setPosition(m_position);
         
         // ===================================
-        // NUEVO: Actualizar sprite con textura y activar animación
+        // NUEVO: Actualizar sprite con textura y activar animacion
         // ===================================
         if (m_texturesLoaded) {
             m_enemySprite.setPosition(m_position);
         }
-        setMoving(true);  // ← NUEVO: Activar animación de movimiento
+        setMoving(true);  // ← NUEVO: Activar animacion de movimiento
     }
 }
 
 // ===================================
-// Movimiento con físicas
+// Movimiento con fisicas
 // ===================================
 void CEnemy::moveWithPhysics(const sf::Vector2f& targetPosition, float deltaTime) {
     if (!m_physicsEnabled || !m_physicsBody || !isAlive()) return;
@@ -339,7 +336,7 @@ void CEnemy::moveWithPhysics(const sf::Vector2f& targetPosition, float deltaTime
     float moveDirection = 0.0f;
     
     // ===================================
-    // CORREGIDO: Detección de movimiento más sensible
+    // CORREGIDO: Deteccion de movimiento mas sensible
     // ===================================
     if (std::abs(direction.x) > 5.0f) {  // Reducido de 10.0f a 5.0f
         moveDirection = (direction.x > 0) ? 1.0f : -1.0f;
@@ -387,7 +384,7 @@ void CEnemy::takeDamage(int damage) {
             m_sprite.setFillColor(sf::Color::Red);
         } else {
             m_sprite.setFillColor(sf::Color::Black);
-            setMoving(false);  // ← NUEVO: Parar animación al morir
+            setMoving(false);  // ← NUEVO: Parar animacion al morir
             std::cout << m_type << " ha muerto!\n";
         }
     }
@@ -416,7 +413,6 @@ void CEnemy::jump() {
     m_physics->applyImpulse(this, 0.0f, -m_jumpForce);
     m_isGrounded = false;
     
-    std::cout << "🦘 " << m_type << " salta! Fuerza: " << m_jumpForce << std::endl;
 }
 
 // ===================================
@@ -429,27 +425,27 @@ void CEnemy::fly() {
 }
 
 // ===================================
-// Patrullar automáticamente
+// Patrullar automaticamente
 // ===================================
 void CEnemy::patrol() {
     if (!m_physicsEnabled || !m_physicsBody) return;
     
     // ===================================
-    // CORREGIDO: Patrullaje más dinámico
+    // CORREGIDO: Patrullaje mas dinamico
     // ===================================
     applyMovementForce(static_cast<float>(m_movementDirection) * 0.8f);  // Aumentado de 0.5f
     setMoving(true);
 }
 
 // ===================================
-// Seguir objetivo con físicas
+// Seguir objetivo con fisicas
 // ===================================
 void CEnemy::followTarget(const sf::Vector2f& target, float deltaTime) {
     moveWithPhysics(target, deltaTime);
 }
 
 // ===================================
-// IA específica para murciélagos (vuelan)
+// IA especifica para murciélagos (vuelan)
 // ===================================
 void CEnemy::handleMurcieelagoAI(const sf::Vector2f& playerPosition, float deltaTime) {
     if (!m_physicsEnabled || !m_physicsBody) return;
@@ -458,20 +454,20 @@ void CEnemy::handleMurcieelagoAI(const sf::Vector2f& playerPosition, float delta
     float distance = calculateDistance(m_position, playerPosition);
     
     // ===================================
-    // CORREGIDO: IA de murciélago más efectiva
+    // CORREGIDO: IA de murciélago mas efectiva
     // ===================================
-    if (distance <= m_detectionRange * 1.5f && distance > m_attackRange) {  // 50% más de rango
+    if (distance <= m_detectionRange * 1.5f && distance > m_attackRange) {  // 50% mas de rango
         float forceX = (direction.x > 0) ? m_movementForce : -m_movementForce;
         float forceY = (direction.y > 0) ? m_flyForce : -m_flyForce;
         
         // ===================================
-        // CORREGIDO: Fuerzas más fuertes
+        // CORREGIDO: Fuerzas mas fuertes
         // ===================================
         m_physics->applyForce(this, forceX * 0.8f, forceY * 0.5f);  // Aumentado de 0.5f y 0.3f
         setMoving(true);
         
         // ===================================
-        // CORREGIDO: Velocidad máxima más alta
+        // CORREGIDO: Velocidad maxima mas alta
         // ===================================
         b2Vec2 velocity = m_physicsBody->GetLinearVelocity();
         if (velocity.Length() > 10.0f) {  // Aumentado de 8.0f
@@ -483,7 +479,7 @@ void CEnemy::handleMurcieelagoAI(const sf::Vector2f& playerPosition, float delta
 }
 
 // ===================================
-// IA específica para esqueletos
+// IA especifica para esqueletos
 // ===================================
 void CEnemy::handleEsqueletoAI(const sf::Vector2f& playerPosition, float deltaTime) {
     if (!m_physicsEnabled || !m_physicsBody) return;
@@ -492,26 +488,26 @@ void CEnemy::handleEsqueletoAI(const sf::Vector2f& playerPosition, float deltaTi
     float distance = calculateDistance(m_position, playerPosition);
     
     // ===================================
-    // CORREGIDO: Rango de detección más amplio
+    // CORREGIDO: Rango de deteccion mas amplio
     // ===================================
-    if (distance <= m_detectionRange * 1.2f && distance > m_attackRange) {  // 20% más de rango
+    if (distance <= m_detectionRange * 1.2f && distance > m_attackRange) {  // 20% mas de rango
         float moveDirection = (direction.x > 0) ? 1.0f : -1.0f;
         
         // ===================================
-        // CORREGIDO: Movimiento más agresivo
+        // CORREGIDO: Movimiento mas agresivo
         // ===================================
         applyMovementForce(moveDirection * 1.3f);  // Multiplicador adicional
         setMoving(true);
         
         // ===================================
-        // CORREGIDO: Salto más frecuente
+        // CORREGIDO: Salto mas frecuente
         // ===================================
-        if (m_isGrounded && (direction.y < -20.0f || std::abs(direction.x) < 30.0f)) {  // Más sensible
+        if (m_isGrounded && (direction.y < -20.0f || std::abs(direction.x) < 30.0f)) {  // Mas sensible
             jump();
         }
     } else if (distance > m_detectionRange) {
         // ===================================
-        // CORREGIDO: Patrullaje más activo
+        // CORREGIDO: Patrullaje mas activo
         // ===================================
         patrol();
     } else {
@@ -520,7 +516,7 @@ void CEnemy::handleEsqueletoAI(const sf::Vector2f& playerPosition, float deltaTi
 }
 
 // ===================================
-// IA específica para zombies
+// IA especifica para zombies
 // ===================================
 void CEnemy::handleZombieAI(const sf::Vector2f& playerPosition, float deltaTime) {
     if (!m_physicsEnabled || !m_physicsBody) return;
@@ -529,9 +525,9 @@ void CEnemy::handleZombieAI(const sf::Vector2f& playerPosition, float deltaTime)
     float distance = calculateDistance(m_position, playerPosition);
     
     // ===================================
-    // CORREGIDO: IA de zombie más persistente
+    // CORREGIDO: IA de zombie mas persistente
     // ===================================
-    if (distance <= m_detectionRange * 1.3f && distance > m_attackRange) {  // 30% más de rango
+    if (distance <= m_detectionRange * 1.3f && distance > m_attackRange) {  // 30% mas de rango
         float moveDirection = (direction.x > 0) ? 1.0f : -1.0f;
         
         // ===================================
@@ -555,7 +551,7 @@ void CEnemy::applyMovementForce(float direction) {
     b2Vec2 velocity = m_physicsBody->GetLinearVelocity();
     
     // ===================================
-    // CORREGIDO: Velocidades máximas más altas y diferenciadas
+    // CORREGIDO: Velocidades maximas mas altas y diferenciadas
     // ===================================
     float maxVelocity;
     switch (m_enemyType) {
@@ -574,7 +570,7 @@ void CEnemy::applyMovementForce(float direction) {
     }
     
     // ===================================
-    // CORREGIDO: Fuerza base más alta
+    // CORREGIDO: Fuerza base mas alta
     // ===================================
     if (std::abs(velocity.x) < maxVelocity) {
         float force = direction * m_movementForce * 1.2f;  // Multiplicador adicional
@@ -582,10 +578,10 @@ void CEnemy::applyMovementForce(float direction) {
     }
     
     // ===================================
-    // NUEVO: Ayuda adicional si está muy lento
+    // NUEVO: Ayuda adicional si esta muy lento
     // ===================================
     if (std::abs(velocity.x) < 0.5f && direction != 0.0f) {
-        // Impulso adicional si está casi parado
+        // Impulso adicional si esta casi parado
         float boostForce = direction * m_movementForce * 2.0f;
         m_physics->applyForce(this, boostForce, 0.0f);
     }
@@ -605,7 +601,7 @@ void CEnemy::checkGroundState() {
 }
 
 // ===================================
-// Actualizar estado basado en físicas
+// Actualizar estado basado en fisicas
 // ===================================
 void CEnemy::updatePhysicsState() {
     if (!m_physicsEnabled) return;
@@ -614,7 +610,7 @@ void CEnemy::updatePhysicsState() {
 }
 
 // ===================================
-// Actualizar dirección de movimiento
+// Actualizar direccion de movimiento
 // ===================================
 void CEnemy::updateMovementDirection(float deltaTime) {
     m_lastDirectionChange += deltaTime;
@@ -625,7 +621,7 @@ void CEnemy::updateMovementDirection(float deltaTime) {
     }
 }
 
-// IA BÁSICA
+// IA BaSICA
 void CEnemy::updateAI(const sf::Vector2f& playerPosition, float deltaTime) {
     if (!isAlive()) return;
     
@@ -634,15 +630,15 @@ void CEnemy::updateAI(const sf::Vector2f& playerPosition, float deltaTime) {
     updateMovementDirection(deltaTime);
     
     // ===================================
-    // CORREGIDO: Lógica de IA más agresiva
+    // CORREGIDO: Logica de IA mas agresiva
     // ===================================
-    if (distanceToPlayer <= m_detectionRange * 1.2f) {  // 20% más de rango base
+    if (distanceToPlayer <= m_detectionRange * 1.2f) {  // 20% mas de rango base
         if (distanceToPlayer <= m_attackRange && canAttack()) {
             attack();
             setMoving(false);
         } else {
             // ===================================
-            // CORREGIDO: Siempre usar físicas si está disponible
+            // CORREGIDO: Siempre usar fisicas si esta disponible
             // ===================================
             if (m_physicsEnabled) {
                 switch (m_enemyType) {
@@ -657,7 +653,7 @@ void CEnemy::updateAI(const sf::Vector2f& playerPosition, float deltaTime) {
                         break;
                 }
             } else {
-                // Fallback sin físicas
+                // Fallback sin fisicas
                 moveTowards(playerPosition, deltaTime);
             }
         }
@@ -684,7 +680,7 @@ void CEnemy::update(float deltaTime) {
     }
     
     // ===================================
-    // NUEVO: Actualizar animación
+    // NUEVO: Actualizar animacion
     // ===================================
     if (m_texturesLoaded) {
         updateAnimation(deltaTime);
@@ -699,11 +695,11 @@ void CEnemy::render(sf::RenderWindow& window) {
     if (isAlive()) {
         if (m_texturesLoaded) {
             // ===================================
-            // NUEVO: Renderizar con textura y animación
+            // NUEVO: Renderizar con textura y animacion
             // ===================================
             window.draw(m_enemySprite);
         } else {
-            // Fallback: renderizar rectángulo de color
+            // Fallback: renderizar rectangulo de color
             window.draw(m_sprite);
         }
     }
@@ -715,33 +711,33 @@ void CEnemy::printStatus() const {
     std::cout << "Tipo: " << m_type << "\n";
     std::cout << "Salud: " << m_health << "/" << m_maxHealth << "\n";
     std::cout << "Daño: " << m_damage << "\n";
-    std::cout << "Posición: (" << m_position.x << ", " << m_position.y << ")\n";
+    std::cout << "Posicion: (" << m_position.x << ", " << m_position.y << ")\n";
     std::cout << "Velocidad: " << m_speed << "\n";
-    std::cout << "Rango detección: " << m_detectionRange << "\n";
+    std::cout << "Rango deteccion: " << m_detectionRange << "\n";
     std::cout << "Rango ataque: " << m_attackRange << "\n";
     std::cout << "Estado: " << (isAlive() ? "Vivo" : "Muerto") << "\n";
     std::cout << "Texturas: " << (m_texturesLoaded ? "Cargadas" : "No cargadas") << "\n";
-    std::cout << "Animación: " << (m_currentState == EnemyState::IDLE ? "IDLE" : "MOVING") << "\n";
+    std::cout << "Animacion: " << (m_currentState == EnemyState::IDLE ? "IDLE" : "MOVING") << "\n";
     std::cout << "Frame actual: " << m_currentFrame << "\n";
     std::cout << "========================\n";
 }
 
 void CEnemy::printPhysicsStatus() const {
-    std::cout << "=== FÍSICAS DEL ENEMIGO " << m_type << " ===" << std::endl;
-    std::cout << "Físicas habilitadas: " << (m_physicsEnabled ? "SÍ" : "NO") << std::endl;
-    std::cout << "En el suelo: " << (m_isGrounded ? "SÍ" : "NO") << std::endl;
-    std::cout << "Puede volar: " << (m_canFly ? "SÍ" : "NO") << std::endl;
-    std::cout << "Dirección de movimiento: " << m_movementDirection << std::endl;
+    std::cout << "=== FiSICAS DEL ENEMIGO " << m_type << " ===" << std::endl;
+    std::cout << "Fisicas habilitadas: " << (m_physicsEnabled ? "Si" : "NO") << std::endl;
+    std::cout << "En el suelo: " << (m_isGrounded ? "Si" : "NO") << std::endl;
+    std::cout << "Puede volar: " << (m_canFly ? "Si" : "NO") << std::endl;
+    std::cout << "Direccion de movimiento: " << m_movementDirection << std::endl;
     
     if (m_physicsEnabled && m_physicsBody) {
         b2Vec2 pos = m_physicsBody->GetPosition();
         b2Vec2 vel = m_physicsBody->GetLinearVelocity();
         
-        std::cout << "Posición física: (" << pos.x << ", " << pos.y << ") metros" << std::endl;
+        std::cout << "Posicion fisica: (" << pos.x << ", " << pos.y << ") metros" << std::endl;
         std::cout << "Velocidad: (" << vel.x << ", " << vel.y << ") m/s" << std::endl;
         
         sf::Vector2f pixelPos = CPhysics::metersToPixels(pos);
-        std::cout << "Posición en píxeles: (" << pixelPos.x << ", " << pixelPos.y << ")" << std::endl;
+        std::cout << "Posicion en pixeles: (" << pixelPos.x << ", " << pixelPos.y << ")" << std::endl;
     }
     
     std::cout << "============================" << std::endl;
@@ -752,15 +748,15 @@ void CEnemy::printPhysicsStatus() const {
 // ===================================
 void CEnemy::printSpriteStatus() const {
     std::cout << "=== SPRITES DEL ENEMIGO " << m_type << " ===" << std::endl;
-    std::cout << "Texturas cargadas: " << (m_texturesLoaded ? "SÍ" : "NO") << std::endl;
+    std::cout << "Texturas cargadas: " << (m_texturesLoaded ? "Si" : "NO") << std::endl;
     std::cout << "Estado actual: " << (m_currentState == EnemyState::IDLE ? "IDLE" : "MOVING") << std::endl;
     std::cout << "Frame actual: " << m_currentFrame << std::endl;
-    std::cout << "En movimiento: " << (m_isMoving ? "SÍ" : "NO") << std::endl;
-    std::cout << "Velocidad animación: " << m_animationSpeed << std::endl;
+    std::cout << "En movimiento: " << (m_isMoving ? "Si" : "NO") << std::endl;
+    std::cout << "Velocidad animacion: " << m_animationSpeed << std::endl;
     
     if (m_texturesLoaded) {
         sf::IntRect rect = getCurrentFrameRect();
-        std::cout << "Rectángulo actual: (" << rect.left << "," << rect.top 
+        std::cout << "Rectangulo actual: (" << rect.left << "," << rect.top 
                   << ") " << rect.width << "x" << rect.height << std::endl;
         std::cout << "Archivo de textura: " << getTextureFileName() << std::endl;
     }
@@ -839,11 +835,10 @@ float CEnemy::calculateDistance(const sf::Vector2f& position1, const sf::Vector2
 }
 
 // ===================================
-// NUEVO: Métodos de sprites y animación
+// NUEVO: Métodos de sprites y animacion
 // ===================================
 
 void CEnemy::loadEnemyTextures() {
-    std::cout << "🎨 Cargando texturas para " << m_type << "..." << std::endl;
     
     std::string textureFile = getTextureFileName();
     std::string fullPath = "assets/" + textureFile;
@@ -851,14 +846,14 @@ void CEnemy::loadEnemyTextures() {
     std::cout << "Intentando cargar: " << fullPath << std::endl;
     
     if (!m_enemyTexture.loadFromFile(fullPath)) {
-        std::cerr << "❌ Error: No se pudo cargar " << fullPath << std::endl;
-        std::cerr << "   Usando fallback (rectángulo de color)" << std::endl;
+        std::cerr << " Error: No se pudo cargar " << fullPath << std::endl;
+        std::cerr << "   Usando fallback (rectangulo de color)" << std::endl;
         m_texturesLoaded = false;
         return;
     }
     
     sf::Vector2u textureSize = m_enemyTexture.getSize();
-    std::cout << "✅ " << textureFile << " cargado (" << textureSize.x << "x" << textureSize.y << ")" << std::endl;
+    std::cout << " " << textureFile << " cargado (" << textureSize.x << "x" << textureSize.y << ")" << std::endl;
     
     // Configurar sprite inicial
     m_texturesLoaded = true;
@@ -869,37 +864,23 @@ void CEnemy::loadEnemyTextures() {
     switch (m_enemyType) {
         case EnemyType::ZOMBIE:
             m_enemySprite.setScale(ZombieSprites::SCALE_X, ZombieSprites::SCALE_Y);
-            std::cout << "   🧟 ZOMBIE escalado a: " << ZombieSprites::SCALE_X << "x" << ZombieSprites::SCALE_Y << std::endl;
             break;
             
         case EnemyType::ESQUELETO:
             m_enemySprite.setScale(SkeletonSprites::SCALE_X, SkeletonSprites::SCALE_Y);
-            std::cout << "   💀 SKELETON escalado a: " << SkeletonSprites::SCALE_X << "x" << SkeletonSprites::SCALE_Y << std::endl;
             break;
             
         case EnemyType::MURCIELAGO:
             m_enemySprite.setScale(MurcielagoSprites::SCALE_X, MurcielagoSprites::SCALE_Y);
-            std::cout << "   🦇 MURCIELAGO escalado a: " << MurcielagoSprites::SCALE_X << "x" << MurcielagoSprites::SCALE_Y << std::endl;
             break;
     }
     
     // Configurar frame inicial (IDLE)
     updateSpriteFrame();
     
-    // Imprimir configuración del sprite
-    switch (m_enemyType) {
-        case EnemyType::ZOMBIE:
-            std::cout << "   🧟 ZOMBIE - IDLE: 1 frame, MOVING: 4 frames" << std::endl;
-            break;
-        case EnemyType::ESQUELETO:
-            std::cout << "   💀 SKELETON - IDLE: 1 frame, MOVING: 5 frames" << std::endl;
-            break;
-        case EnemyType::MURCIELAGO:
-            std::cout << "   🦇 MURCIELAGO - Siempre animado: 5 frames" << std::endl;
-            break;
-    }
+    // Imprimir configuracion del sprite
+
     
-    std::cout << "✅ Sistema de sprites de " << m_type << " inicializado" << std::endl;
 }
 
 void CEnemy::updateAnimation(float deltaTime) {
@@ -1010,8 +991,10 @@ void CEnemy::updateAnimationState() {
     }
 }
 
-std::string CEnemy::getTextureFileName() const {
-    switch (m_enemyType) {
+std::string CEnemy::getTextureFileName() const 
+{
+    switch (m_enemyType) 
+    {
         case EnemyType::ZOMBIE: return "zombie.png";
         case EnemyType::ESQUELETO: return "skeleton.png";
         case EnemyType::MURCIELAGO: return "murcielago.png";

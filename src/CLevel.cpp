@@ -8,7 +8,7 @@
 // Constructor
 CLevel::CLevel(int levelNumber) 
     : m_levelNumber(levelNumber), m_state(LevelState::LOADING),
-      m_physics(nullptr),           // ← NUEVO: Referencia al sistema de físicas
+      m_physics(nullptr),        
       m_levelSize(800.0f, 600.0f), m_levelTime(0.0f), m_spawnTimer(0.0f),
       m_totalEnemies(0), m_enemiesKilled(0), m_texturesLoaded(false),
       m_isLoaded(false), m_completionTime(0.0f) {
@@ -22,9 +22,9 @@ CLevel::CLevel(int levelNumber)
 // Destructor
 CLevel::~CLevel() {
     // Limpiar plataformas físicas antes de destruir
+    
     destroyPhysicalPlatforms();
     destroyLevelBoundaries();
-    
     unloadLevel();
     std::cout << "Nivel " << m_levelNumber << " destruido." << std::endl;
 }
@@ -122,11 +122,9 @@ void CLevel::setLevelSize(float width, float height) {
 // ===================================
 void CLevel::initializePhysics(CPhysics* physics) {
     if (!physics) {
-        std::cerr << "❌ Error: Sistema de físicas nulo para el nivel" << std::endl;
+        std::cerr << " Error: Sistema de físicas nulo para el nivel" << std::endl;
         return;
     }
-    
-    std::cout << "⚙️ Inicializando físicas del " << m_levelName << "..." << std::endl;
     
     m_physics = physics;
     
@@ -136,7 +134,6 @@ void CLevel::initializePhysics(CPhysics* physics) {
     // Crear límites invisibles
     createLevelBoundaries();
     
-    std::cout << "✅ Físicas del " << m_levelName << " inicializadas" << std::endl;
 }
 
 // ===================================
@@ -144,11 +141,11 @@ void CLevel::initializePhysics(CPhysics* physics) {
 // ===================================
 void CLevel::createPhysicalPlatforms() {
     if (!m_physics) {
-        std::cerr << "❌ Error: No se puede crear plataformas sin sistema de físicas" << std::endl;
+        std::cerr << "Error: No se puede crear plataformas sin sistema de físicas" << std::endl;
         return;
     }
     
-    std::cout << "🟩 Creando plataformas físicas para " << m_levelName << "..." << std::endl;
+
     
     // Limpiar plataformas existentes
     clearPhysicalPlatforms();
@@ -156,7 +153,7 @@ void CLevel::createPhysicalPlatforms() {
     // Configurar plataformas específicas por nivel
     setupPhysicalPlatformsForLevel();
     
-    std::cout << "✅ " << m_platforms.size() << " plataformas físicas creadas" << std::endl;
+
 }
 
 // ===================================
@@ -165,7 +162,6 @@ void CLevel::createPhysicalPlatforms() {
 void CLevel::createLevelBoundaries() {
     if (!m_physics) return;
     
-    std::cout << "🧱 Creando límites limpios del nivel..." << std::endl;
     
     // Limpiar límites existentes
     destroyLevelBoundaries();
@@ -183,12 +179,6 @@ void CLevel::createLevelBoundaries() {
     b2Body* rightWall = m_physics->createWall(m_levelSize.x, 0.0f, wallThickness, m_levelSize.y);
     if (rightWall) m_wallBodies.push_back(rightWall);
     
-    // ===================================
-    // NO CREAR NADA MÁS - Sin techo, sin muros extra
-    // ===================================
-    
-    std::cout << "✅ SOLO " << m_wallBodies.size() << " límites básicos creados" << std::endl;
-    std::cout << "   Sin techo, sin muros invisibles extra" << std::endl;
 }
 // GESTIÓN DEL NIVEL
 void CLevel::loadLevel() {
@@ -318,13 +308,10 @@ CEnemy* CLevel::getClosestEnemyToPosition(const sf::Vector2f& position, float ma
 // ===================================
 void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf::Color color) {
     if (!m_physics) {
-        std::cerr << "❌ Error: No se puede agregar plataforma sin sistema de físicas" << std::endl;
+        std::cerr << "Error: No se puede agregar plataforma sin sistema de físicas" << std::endl;
         return;
     }
     
-    std::cout << "\n🟩 CREANDO PLATAFORMA CON TEXTURA GRUESA:" << std::endl;
-    std::cout << "   📍 Posición física: (" << x << "," << y << ")" << std::endl;
-    std::cout << "   📐 Tamaño físico: " << width << "x" << height << std::endl;
     
     // ===================================
     // PASO 1: CREAR PLATAFORMA BASE
@@ -342,9 +329,7 @@ void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf
         
         // Si la plataforma física ya es gruesa, usar su altura
         float finalVisualHeight = std::max(height, visualThickness);
-        
-        std::cout << "   🎨 Grosor físico: " << height << " px" << std::endl;
-        std::cout << "   🎨 Grosor visual: " << finalVisualHeight << " px" << std::endl;
+    
         
         // Configurar sprite con textura
         platform.floorSprite.setTexture(m_floorTexture);
@@ -364,8 +349,7 @@ void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf
         platform.floorSprite.setScale(scaleX, scaleY);
         platform.hasTexture = true;
         
-        std::cout << "   📏 Escala aplicada: " << scaleX << "x" << scaleY << std::endl;
-        std::cout << "   📍 Visual se extiende de Y=" << y << " hasta Y=" << (y + finalVisualHeight) << std::endl;
+
         
         // ===================================
         // ACTUALIZAR TAMBIÉN EL SHAPE DE RESPALDO
@@ -388,40 +372,35 @@ void CLevel::addPhysicalPlatform(float x, float y, float width, float height, sf
         platform.shape.setOutlineColor(sf::Color::White);
         platform.hasTexture = false;
         
-        std::cout << "   ⚠️ Usando color sólido grueso (textura no disponible)" << std::endl;
+        
     }
     
     // ===================================
     // PASO 3: CREAR CUERPO FÍSICO (TAMAÑO ORIGINAL - NO CAMBIAR)
     // ===================================
-    std::cout << "   🔧 Creando cuerpo físico con tamaño original..." << std::endl;
+
     platform.physicsBody = m_physics->createPlatform(x, y, width, height);  // Física original
     
     if (platform.physicsBody) {
-        std::cout << "   ✅ Plataforma gruesa creada:" << std::endl;
-        std::cout << "      Física: " << width << "x" << height << " (jugabilidad)" << std::endl;
-        std::cout << "      Visual: " << width << "x" << std::max(height, 40.0f) << " (apariencia)" << std::endl;
         m_platforms.push_back(platform);
     } else {
         std::cerr << "    ERROR: No se pudo crear cuerpo físico" << std::endl;
     }
     
-    std::cout << "🟩 PLATAFORMA GRUESA COMPLETADA\n" << std::endl;
 }
 // ===================================
 // NUEVO: Limpiar plataformas físicas
 // ===================================
 void CLevel::clearPhysicalPlatforms() {
-    std::cout << "🧹 Limpiando plataformas físicas..." << std::endl;
+    std::cout << "Limpiando plataformas físicas..." << std::endl;
     
-    // No necesitamos destruir los cuerpos manualmente aquí porque
+    // No necesitamos destruir los cuerpos manualmente aqui porque
     // CPhysics se encarga de eso cuando se destruye el mundo
     m_platforms.clear();
     
-    std::cout << "✓ Plataformas físicas limpiadas" << std::endl;
 }
 
-// GESTIÓN DE OBSTÁCULOS (solo visuales, sin físicas)
+// GESTIÓN DE OBSTACULOS (solo visuales, sin fisicas)
 void CLevel::addObstacle(float x, float y, float width, float height) {
     sf::RectangleShape obstacle;
     obstacle.setPosition(x, y);
@@ -469,13 +448,13 @@ void CLevel::checkLevelCompletion() {
     }
 }
 
-// MÉTODOS SFML
+// METODOS SFML
 void CLevel::update(float deltaTime, const sf::Vector2f& playerPosition) {
     if (m_state != LevelState::ACTIVE) return;
     
     m_levelTime += deltaTime;
     
-    // Spawn enemigos según tiempo
+    // Spawn enemigos segun tiempo
     spawnEnemiesFromPoints(deltaTime);
     
     // Actualizar enemigos existentes
@@ -553,11 +532,7 @@ void CLevel::printEnemyCount() const {
 // NUEVO: Debug de físicas del nivel
 // ===================================
 void CLevel::printPhysicsInfo() const {
-    std::cout << "=== FÍSICAS DEL " << m_levelName << " ===" << std::endl;
-    std::cout << "Sistema de físicas: " << (m_physics ? "ACTIVO" : "INACTIVO") << std::endl;
-    std::cout << "Plataformas físicas: " << m_platforms.size() << std::endl;
-    std::cout << "Límites del nivel: " << m_wallBodies.size() << std::endl;
-    
+
     if (!m_platforms.empty()) {
         std::cout << "--- Detalle de plataformas ---" << std::endl;
         for (size_t i = 0; i < m_platforms.size(); i++) {
@@ -567,7 +542,7 @@ void CLevel::printPhysicsInfo() const {
         }
     }
     
-    std::cout << "=============================" << std::endl;
+    
 }
 
 // MÉTODOS PRIVADOS
@@ -607,14 +582,14 @@ void CLevel::createLevelGeometry() {
         float scaleY2 = m_levelSize.y / layer2Size.y;
         m_layer2Sprite.setScale(scaleX2, scaleY2);
         
-        std::cout << "🎨 Fondos configurados con texturas." << std::endl;
+        
     } else {
         // Fallback: configurar fondo de color sólido MÁS VISIBLE
         m_background.setSize(m_levelSize);
         m_background.setPosition(0.0f, 0.0f);
         m_background.setFillColor(sf::Color(50, 50, 100)); // Azul oscuro más visible
         
-        std::cout << "⚠️  Usando fondo de color azul (texturas no disponibles)." << std::endl;
+    
     }
     
     // Configurar borde
@@ -626,46 +601,44 @@ void CLevel::createLevelGeometry() {
 }
 
 void CLevel::loadLevelTextures() {
-    std::cout << "Cargando texturas del nivel..." << std::endl;
+    
     
     m_texturesLoaded = true; // Assume success, set to false if any fails
     
     // ===================================
     // CARGAR TEXTURA DEL SUELO/PLATAFORMAS
     // ===================================
-    std::cout << "🏗️ Cargando textura de plataformas..." << std::endl;
+
     if (!m_floorTexture.loadFromFile("assets/floor.png")) {
-        std::cerr << "❌ Error: No se pudo cargar assets/floor.png" << std::endl;
-        std::cerr << "   Las plataformas usarán colores sólidos" << std::endl;
     } else {
         sf::Vector2u floorSize = m_floorTexture.getSize();
-        std::cout << "✅ floor.png cargado (" << floorSize.x << "x" << floorSize.y << ")" << std::endl;
+        
     }
     
     // Cargar layer 1 (fondo lejano)
-    std::cout << "Intentando cargar: assets/layer_1.png" << std::endl;
+    ;
     if (!m_layer1Texture.loadFromFile("assets/layer_1.png")) {
-        std::cerr << "❌ Error: No se pudo cargar assets/layer_1.png" << std::endl;
+        std::cerr << "Error: No se pudo cargar assets/layer_1.png" << std::endl;
         m_texturesLoaded = false;
     } else {
         sf::Vector2u size1 = m_layer1Texture.getSize();
-        std::cout << "✅ layer_1.png cargado (" << size1.x << "x" << size1.y << ")" << std::endl;
+        
     }
     
     // Cargar layer 2 (fondo cercano)
-    std::cout << "Intentando cargar: assets/layer_2.png" << std::endl;
+    
     if (!m_layer2Texture.loadFromFile("assets/layer_2.png")) {
-        std::cerr << "❌ Error: No se pudo cargar assets/layer_2.png" << std::endl;
+        std::cerr << "Error: No se pudo cargar assets/layer_2.png" << std::endl;
         m_texturesLoaded = false;
     } else {
         sf::Vector2u size2 = m_layer2Texture.getSize();
-        std::cout << "✅ layer_2.png cargado (" << size2.x << "x" << size2.y << ")" << std::endl;
+        
     }
     
     if (m_texturesLoaded) {
-        std::cout << "🎨 Todas las texturas cargadas exitosamente." << std::endl;
+        std::cout << "Todas las texturas cargadas exitosamente." << std::endl;
     } else {
-        std::cout << "⚠️  Algunas texturas fallaron, usando gráficos por defecto." << std::endl;
+        std::cout << "Algunas texturas fallaron, usando gráficos por defecto." << std::endl;
     }
 }
 
@@ -744,19 +717,19 @@ void CLevel::setupPhysicalPlatformsForLevel() {
 // NUEVO: Destruir plataformas físicas
 // ===================================
 void CLevel::destroyPhysicalPlatforms() {
-    std::cout << "🧹 LIMPIEZA COMPLETA de plataformas físicas..." << std::endl;
+    
     
     // Limpiar plataformas visuales y físicas
     for (auto& platform : m_platforms) {
         if (platform.physicsBody && m_physics) {
             // Destruir cuerpo físico específicamente
             m_physics->destroyBody(platform.physicsBody);
-            std::cout << "   🗑️ Cuerpo físico destruido" << std::endl;
+            
         }
     }
     
     m_platforms.clear();
-    std::cout << "✓ Todas las plataformas limpiadas completamente" << std::endl;
+    
 }
 
 // ===================================
@@ -769,7 +742,7 @@ void CLevel::destroyLevelBoundaries() {
 
 // CONFIGURACIONES ESPECÍFICAS POR NIVEL
 void CLevel::configureLevel1() {
-    m_levelName = "Nivel 1 - Castillo";
+    
     
     // Solo unos pocos enemigos para empezar
     addSpawnPoint(200.0f, 150.0f, EnemyType::MURCIELAGO, 2.0f);
@@ -781,7 +754,7 @@ void CLevel::configureLevel1() {
 }
 
 void CLevel::configureLevel2() {
-    m_levelName = "Nivel 2 - Pasillo Principal";
+    
     
     // Más enemigos y variedad
     addSpawnPoint(100.0f, 100.0f, EnemyType::MURCIELAGO, 1.0f);
@@ -797,7 +770,7 @@ void CLevel::configureLevel2() {
 }
 
 void CLevel::configureLevel3() {
-    m_levelName = "Nivel 3 - Salón del Jefe";
+    
     
     // Nivel difícil con muchos enemigos
     addSpawnPoint(100.0f, 100.0f, EnemyType::MURCIELAGO, 1.0f);
@@ -845,17 +818,17 @@ void CLevel::configureDefaultLevel() {
 // CORREGIDO: Configuración de plataformas para Nivel 1
 // ===================================
 void CLevel::configurePlatformsLevel1() {
-    std::cout << "\n🟩 CONFIGURANDO PLATAFORMAS NIVEL 1 - CORREGIDO..." << std::endl;
+    
     
     // SUELO NEGRO (mantener igual)
     float groundY = 450.0f;
-    std::cout << "🔴 SUELO NEGRO en Y=" << groundY << std::endl;
+   
     addPhysicalPlatform(0.0f, groundY, 800.0f, 150.0f, sf::Color::Black);
     
     // ===================================
     // PLATAFORMAS MÁS BAJAS Y ACCESIBLES
     // ===================================
-    std::cout << "🟢 Creando plataformas MÁS BAJAS..." << std::endl;
+   
     
     // Plataforma verde (izquierda) - MÁS BAJA
     addPhysicalPlatform(150.0f, 380.0f, 120.0f, 20.0f, sf::Color::Green);
@@ -869,19 +842,14 @@ void CLevel::configurePlatformsLevel1() {
     // Plataforma cyan (opcional, cerca del suelo)
     addPhysicalPlatform(250.0f, 400.0f, 100.0f, 20.0f, sf::Color::Cyan);
     
-    std::cout << "✅ Plataformas reposicionadas MÁS BAJAS:" << std::endl;
-    std::cout << "   🟢 Verde: Y=380 (antes muy alta)" << std::endl;
-    std::cout << "   🟡 Amarilla: Y=320" << std::endl;
-    std::cout << "   🔴 Roja: Y=280" << std::endl;
-    std::cout << "   🔵 Cyan: Y=400" << std::endl;
-    std::cout << "================================================\n" << std::endl;
+
 }
 
 // ===================================
 // CORREGIDO: Configuración de plataformas para Nivel 2
 // ===================================
 void CLevel::configurePlatformsLevel2() {
-    std::cout << "\n🟩 CONFIGURANDO PLATAFORMAS DEL NIVEL 2..." << std::endl;
+   
     
     // Plataforma principal (suelo)
     addPhysicalPlatform(0.0f, 550.0f, 800.0f, 50.0f, sf::Color::Black);
@@ -895,14 +863,14 @@ void CLevel::configurePlatformsLevel2() {
     // Plataforma alta
     addPhysicalPlatform(350.0f, 200.0f, 100.0f, 20.0f, sf::Color::Red);
     
-    std::cout << "✅ NIVEL 2: Plataformas intermedias creadas" << std::endl;
+    
 }
 
 // ===================================
 // CORREGIDO: Configuración de plataformas para Nivel 3
 // ===================================
 void CLevel::configurePlatformsLevel3() {
-    std::cout << "\n🟩 CONFIGURANDO PLATAFORMAS DEL NIVEL 3..." << std::endl;
+   
     
     // Plataforma principal (suelo)
     addPhysicalPlatform(0.0f, 550.0f, 800.0f, 50.0f, sf::Color::Black);
@@ -919,10 +887,10 @@ void CLevel::configurePlatformsLevel3() {
     addPhysicalPlatform(150.0f, 320.0f, 80.0f, 15.0f, sf::Color::Cyan);
     addPhysicalPlatform(600.0f, 400.0f, 80.0f, 15.0f, sf::Color::Cyan);
     
-    std::cout << "✅ NIVEL 3: Plataformas avanzadas creadas" << std::endl;
+
 }
 void CLevel::adjustPlatformThickness(float deltaThickness) {
-    std::cout << "\n🔧 AJUSTANDO GROSOR DE PLATAFORMAS: " << deltaThickness << " px" << std::endl;
+    
     
     for (auto& platform : m_platforms) {
         if (platform.hasTexture && m_floorTexture.getSize().x > 0) {
@@ -945,5 +913,5 @@ void CLevel::adjustPlatformThickness(float deltaThickness) {
         }
     }
     
-    std::cout << "✅ Grosor ajustado. F7=Más grueso, F8=Más delgado" << std::endl;
+  
 }

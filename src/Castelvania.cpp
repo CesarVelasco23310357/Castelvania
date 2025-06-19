@@ -5,8 +5,7 @@
 int main() {
     try {
         std::cout << "=== Inicializando Castelvania ===" << std::endl;
-        std::cout << "🎮 Versión con físicas Box2D" << std::endl;
-        std::cout << "⚡ Controles: A/D = Mover, W/Espacio = Saltar, Enter = Atacar" << std::endl;
+        std::cout << "Controles: A/D = Mover, W/Espacio = Saltar, Enter = Atacar" << std::endl;
         std::cout << "=================================" << std::endl;
         
         // Crear el objeto del juego

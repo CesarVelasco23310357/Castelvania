@@ -80,28 +80,11 @@ Castelvania es un juego de plataformas desarrollado en C++ que combina acción, 
 - **Box2D** - Para físicas
 - **CMake** (opcional)
 
-### Linux/Mac
-```bash
-# Instalar dependencias (Ubuntu/Debian)
-sudo apt-get install libsfml-dev libbox2d-dev
-
-# Compilar
-g++ -std=c++17 *.cpp -lsfml-graphics -lsfml-window -lsfml-system -lbox2d -o castelvania
-```
-
-### Windows (Visual Studio)
-```bash
-# Con vcpkg
-vcpkg install sfml box2d
-
-# Compilar
-cl /EHsc *.cpp /link sfml-graphics.lib sfml-window.lib sfml-system.lib box2d.lib
-```
 
 ## 🚀 Ejecución
 
 ```bash
-./castelvania
+make run
 ```
 
 **Nota**: Asegúrate de que la carpeta `assets/` esté en el mismo directorio que el ejecutable.
@@ -119,7 +102,7 @@ cl /EHsc *.cpp /link sfml-graphics.lib sfml-window.lib sfml-system.lib box2d.lib
 |-------|----------|------------|-----------------|
 | **1** | 3 enemigos básicos | ⭐⭐ | Plataformas introductorias |
 | **2** | 5 enemigos variados | ⭐⭐⭐ | Plataformas complejas |
-| **3** | 9 enemigos + jefe | ⭐⭐⭐⭐⭐ | Laberinto de plataformas |
+| **3** | 9 enemigos  | ⭐⭐⭐⭐⭐ | Laberinto de plataformas |
 
 ### 👾 Enemigos
 

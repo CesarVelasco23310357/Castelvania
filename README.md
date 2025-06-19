@@ -279,6 +279,9 @@ Estados disponibles:
 3. Usar **M** para verificar que no esté silenciado
 4. Usar **+** para subir el volumen
 
+## 📄 Commits
+![Commits](assets/commits.png)
+
 
 ## 📄 Licencia
 

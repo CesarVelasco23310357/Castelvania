@@ -699,10 +699,6 @@ void CGame::createPlayer() {
     
     m_player = std::make_unique<CPlayer>(playerName);
     
-    // ===================================
-    // CORREGIDO: Posicion inicial del jugador ajustada
-    // El suelo esta en Y=570, asi que colocamos al jugador arriba para que caiga
-    // ===================================
     float startX = 400.0f;  // Centro de pantalla
     float startY = 350.0f;  // ARRIBA del suelo negro
     

@@ -9,6 +9,7 @@
 #include "CLevel.hpp"
 #include "CEnemy.hpp"
 #include "CPhysics.hpp"  // ← Sistema de físicas Box2D
+#include "CMusica.hpp"   // ← NUEVO: Sistema de música
 
 enum class GameState {
     MENU,
@@ -40,6 +41,11 @@ private:
     // Sistema de físicas Box2D
     // ===================================
     std::unique_ptr<CPhysics> m_physics;
+    
+    // ===================================
+    // NUEVO: Sistema de música
+    // ===================================
+    std::unique_ptr<CMusica> m_musica;
     
     // Input handling
     bool m_keyPressed[sf::Keyboard::KeyCount];
@@ -85,12 +91,14 @@ public:
     void debugShowPlatformPositions();         // ← NUEVA
     void adjustPlatformOffset(float x, float y); // ← NUEVA  
     void resetPlatformOffsets();               // ← NUEVA
+    
     // Getters
     GameState getGameState() const;
     int getCurrentLevel() const;          // Devuelve el número del nivel (1, 2, 3...)
     int getTotalScore() const;
     float getTotalPlayTime() const;
     CPhysics* getPhysics() const;         // Acceso al sistema de físicas
+    CMusica* getMusica() const;           // ← NUEVO: Acceso al sistema de música
 
     // Game control
     void startNewGame();
@@ -116,6 +124,7 @@ private:
     // Game logic
     void updateGameplay(float deltaTime);
     void updatePhysics(float deltaTime);          // Actualizar sistema de físicas
+    void updateMusic(float deltaTime);            // ← NUEVO: Actualizar sistema de música
     void checkCollisions();
     void checkPlayerEnemyCollisions();
     void checkAttackCollisions();
@@ -135,6 +144,7 @@ private:
     void updatePlayerBounds();
     void syncPlayerWithPhysics();                 // Sincronizar posición física con visual
     void debugPlatformInfo();
+    
     // Physics management
     void initializePhysics();
     void createPhysicsWorld();
@@ -143,6 +153,14 @@ private:
     void addEnemyToPhysics(CEnemy* enemy);
     void removeEnemyFromPhysics(CEnemy* enemy);
     void debugPositions(); 
+    
+    // ===================================
+    // NUEVO: Music management
+    // ===================================
+    void initializeMusic();                       // Inicializar sistema de música
+    void handleMusicStateChanges();               // Manejar cambios de música según el estado del juego
+    void handleMusicInput();                      // Controles de música (silenciar, volumen, etc.)
+    
     // UI and rendering
     void setupUI();
     void updateUI();
@@ -157,6 +175,7 @@ private:
     void renderPhysicsDebug();                    // Debug visual de físicas
     void debugMovement();
     void debugPlatformSync(); 
+    
     // Utility methods
     void centerText(sf::Text& text, float y);
     void updateHealthBar();
@@ -173,6 +192,7 @@ private:
     void printGameState() const;
     void printPlayerPosition() const;
     void printPhysicsInfo() const;                // Información de físicas para debug
+    void printMusicInfo() const;                  // ← NUEVO: Información de música para debug
     
     // ===============================================
     // NUEVO: Funciones de debug adicionales

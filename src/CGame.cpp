@@ -1,14 +1,14 @@
 #include "CGame.hpp"
 #include <iostream>
 #include <cmath>
-
+#include "CMusica.hpp"
 // Constructor
 CGame::CGame() 
     : m_gameState(GameState::MENU), m_isRunning(false), m_fontLoaded(false),
       m_currentLevelIndex(0), m_inputCooldown(0.0f), m_playerSpeed(150.0f),
-      m_jumpForce(12.0f),         // ← NUEVO: Fuerza de salto
-      m_attackRange(50.0f), m_attackDamage(25), m_totalScore(0),
-      m_levelsCompleted(0), m_totalPlayTime(0.0f) {
+      m_jumpForce(12.0f), m_attackRange(50.0f), m_attackDamage(25), m_totalScore(0),
+      m_levelsCompleted(0), m_totalPlayTime(0.0f),
+      m_musica(nullptr) { 
     
     // Inicializar array de teclas
     for (int i = 0; i < sf::Keyboard::KeyCount; i++) {
@@ -54,8 +54,10 @@ void CGame::initialize() {
     setupGameSettings();
     setupUI();
     
-    // *** NUEVO: Inicializar sistema de fisicas ***
+    // Sistema de fisicas
     initializePhysics();
+   
+    initializeMusic();
     
     createLevels();
     
@@ -65,9 +67,17 @@ void CGame::initialize() {
     std::cout << "Juego inicializado exitosamente." << std::endl;
 }
 
-// ===============================================
-// NUEVO: Inicializacion del sistema de fisicas
-// ===============================================
+void CGame::initializeMusic() {
+    
+    m_musica = std::make_unique<CMusica>();
+    
+    if (m_musica && m_musica->initialize()) {
+        m_musica->playMenuMusic();
+    } else {
+        std::cerr << "Error: No se pudo inicializar el sistema de música" << std::endl;
+        m_musica.reset(); 
+    }
+}
 void CGame::initializePhysics() {
     
     m_physics = std::make_unique<CPhysics>();
@@ -87,10 +97,15 @@ void CGame::cleanup() {
     m_player.reset();
     m_levels.clear();
     
-    // *** NUEVO: Limpiar sistema de fisicas ***
+    if (m_musica) {
+        m_musica->cleanup();
+        m_musica.reset();
+        
+    }
+    
     m_physics.reset();
     
-    std::cout << "Recursos del juego liberados." << std::endl;
+
 }
 
 bool CGame::isRunning() const {
@@ -261,12 +276,14 @@ void CGame::update(float deltaTime) {
     switch (m_gameState) {
         case GameState::PLAYING:
             updateGameplay(deltaTime);
-            updatePhysics(deltaTime);    // ← NUEVO: Actualizar fisicas
+            updatePhysics(deltaTime);
             break;
         default:
-            // Otros estados no necesitan update constante
             break;
     }
+    
+    // *** NUEVO: Actualizar sistema de música ***
+    updateMusic(deltaTime);
     
     updateUI();
 }
@@ -291,7 +308,15 @@ void CGame::updatePhysics(float deltaTime) {
     CLevel* activeLevel = getActiveLevel();
  
 }
-
+void CGame::updateMusic(float deltaTime) {
+    if (!m_musica) return;
+    
+    
+    m_musica->update(deltaTime);
+    
+   
+    handleMusicStateChanges();
+}
 void CGame::render() {
     m_window.clear(sf::Color::Black);
     
@@ -332,7 +357,7 @@ void CGame::processGameInput(float deltaTime) {
     if (!m_player) return;
     
     handlePlayerMovement(deltaTime);
-    
+    handleMusicInput();
     if (isKeyJustPressed(sf::Keyboard::I)) {
         debugPositions();
     }   
@@ -403,6 +428,7 @@ void CGame::processGameInput(float deltaTime) {
     if (isKeyJustPressed(sf::Keyboard::Y)) {
         forcePlayerRepositioning();
     }
+   
 }
 
 
@@ -725,7 +751,72 @@ void CGame::createPlayer() {
     
     std::cout << "Jugador creado exitosamente\n" << std::endl;
 }
+void CGame::handleMusicInput() {
+    if (!m_musica) return;
+    
+ 
+    if (isKeyJustPressed(sf::Keyboard::M)) {
+        m_musica->toggleSilencio();
+    }
+    
 
+    if (isKeyJustPressed(sf::Keyboard::Equal)) { 
+        float currentVolume = m_musica->getMasterVolumen();
+        m_musica->setMasterVolumen(currentVolume + 10.0f);
+    }
+    
+    
+    if (isKeyJustPressed(sf::Keyboard::Hyphen)) { 
+        float currentVolume = m_musica->getMasterVolumen();
+        m_musica->setMasterVolumen(currentVolume - 10.0f);
+    }
+    
+    // F9 = Debug de música
+    if (isKeyJustPressed(sf::Keyboard::F9)) {
+        printMusicInfo();
+    }
+}
+void CGame::handleMusicStateChanges() {
+    if (!m_musica) return;
+    
+    static GameState lastState = GameState::MENU; // Para detectar cambios
+    
+    if (m_gameState != lastState) {
+        switch (m_gameState) {
+            case GameState::MENU:
+            case GameState::GAME_OVER:
+            case GameState::VICTORY:
+                if (m_musica->getCurrentMusicType() != MusicType::MENU) {
+                    m_musica->fadeToMenuMusic(1.5f);
+                }
+                break;
+                
+            case GameState::PLAYING:
+                // Cambiar a música del gameplay
+                if (m_musica->getCurrentMusicType() != MusicType::GAMEPLAY) {
+                    m_musica->fadeToGameplayMusic(1.5f);
+                }
+                break;
+                
+            case GameState::PAUSED:
+                // Pausar música actual
+                m_musica->pauseMusic();
+                break;
+                
+            case GameState::LEVEL_COMPLETED:
+                // Mantener música del gameplay pero bajar volumen
+                // (opcional - puedes quitar esto si no lo quieres)
+                break;
+        }
+        
+        lastState = m_gameState;
+    }
+    
+    // Si se reanuda desde pausa
+    if (m_gameState == GameState::PLAYING && m_musica->isPaused()) {
+        m_musica->resumeMusic();
+    }
+}
 void CGame::handlePlayerMovement(float deltaTime) {
     if (!m_player) return;
     
@@ -989,25 +1080,22 @@ void CGame::renderMenu() {
     // RENDERIZAR IMAGEN DE FONDO PRIMERO
     // ===================================
     if (m_titleScreenTexture.getSize().x > 0) {
-        // Si la textura esta cargada, dibujar la imagen de titulo
         m_window.draw(m_titleScreenSprite);
-
     } 
     
     // ===================================
     // RENDERIZAR TEXTOS ENCIMA DE LA IMAGEN
     // ===================================
-    // Texto principal con fondo semi-transparente para legibilidad
     m_titleText.setString("PRESIONA ENTER PARA COMENZAR");
     m_titleText.setCharacterSize(32);
     m_titleText.setFillColor(sf::Color::White);
     m_titleText.setOutlineThickness(2.0f);
     m_titleText.setOutlineColor(sf::Color::Black);
-    centerText(m_titleText, 450.0f);  // Posicion baja para no tapar la imagen
+    centerText(m_titleText, 450.0f);
     m_window.draw(m_titleText);
     
-    // Instrucciones de controles
-    m_statusText.setString("A/D = Mover | W/ESPACIO = Saltar | ENTER = Atacar | ESC = Pausar");
+    // Instrucciones de controles (MODIFICADO para incluir música)
+    m_statusText.setString("A/D = Mover | W/ESPACIO = Saltar | ENTER = Atacar | M = Música | +/- = Volumen");
     m_statusText.setCharacterSize(16);
     m_statusText.setFillColor(sf::Color::Yellow);
     m_statusText.setOutlineThickness(1.0f);
@@ -1389,4 +1477,19 @@ void CGame::debugPositions() {
         std::cout << "Jugador: (" << pos.x << ", " << pos.y << ")" << std::endl;
         std::cout << "Suelo en Y=450, jugador " << (pos.y < 450 ? "ARRIBA" : "ABAJO") << std::endl;
     }
+}
+CMusica* CGame::getMusica() const {
+    return m_musica.get();
+}
+
+
+void CGame::printMusicInfo() const {
+
+    
+    if (m_musica) {
+        m_musica->printAudioStatus();
+        m_musica->printVolumeInfo();
+    }
+    
+
 }
